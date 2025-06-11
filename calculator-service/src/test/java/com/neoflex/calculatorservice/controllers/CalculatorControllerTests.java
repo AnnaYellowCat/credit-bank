@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
@@ -54,17 +55,26 @@ public class CalculatorControllerTests {
                 .passportSeries("4567")
                 .passportNumber("456789")
                 .build();
-
         List<LoanOfferDto> offers = List.of(
-                new LoanOfferDto(),
-                new LoanOfferDto(),
-                new LoanOfferDto(),
-                new LoanOfferDto()
+                LoanOfferDto.builder()
+                        .totalAmount(BigDecimal.valueOf(40000))
+                        .rate(BigDecimal.valueOf(20))
+                        .build(),
+                LoanOfferDto.builder()
+                        .totalAmount(BigDecimal.valueOf(30000))
+                        .rate(BigDecimal.valueOf(16))
+                        .build(),
+                LoanOfferDto.builder()
+                        .totalAmount(BigDecimal.valueOf(20000))
+                        .rate(BigDecimal.valueOf(14))
+                        .build(),
+                LoanOfferDto.builder()
+                        .totalAmount(BigDecimal.valueOf(10000))
+                        .rate(BigDecimal.valueOf(10))
+                        .build()
         );
-
         when(calculatorService.getLoanOffers(any(LoanStatementRequestDto.class)))
                 .thenReturn(offers);
-
         List result = given()
                 .contentType(ContentType.JSON)
                 .when()
@@ -73,7 +83,6 @@ public class CalculatorControllerTests {
                 .then()
                 .log().body()
                 .statusCode(HttpStatus.OK.value()).extract().as(List.class);
-
         assertEquals(4, result.size());
     }
 
@@ -90,7 +99,6 @@ public class CalculatorControllerTests {
                 .passportSeries("4567")
                 .passportNumber("456789")
                 .build();
-
         given()
                 .contentType(ContentType.JSON)
                 .when()
@@ -103,10 +111,14 @@ public class CalculatorControllerTests {
 
     @Test
     void getCredit_ReturnsCredit_WhenItIsAvailableToIssueLoan(){
-
         when(calculatorService.getCredit(any(ScoringDataDto.class)))
-                .thenReturn(CreditDto.builder().psk(BigDecimal.valueOf(100000)).build());
-
+                .thenReturn(CreditDto.builder()
+                        .psk(BigDecimal.valueOf(100000))
+                        .term(10)
+                        .rate(BigDecimal.valueOf(10))
+                        .monthlyPayment(BigDecimal.valueOf(100))
+                        .paymentSchedule(new ArrayList<PaymentScheduleElementDto>(10))
+                        .build());
         CreditDto creditDto = given()
                 .contentType(ContentType.JSON)
                 .when()
@@ -115,16 +127,13 @@ public class CalculatorControllerTests {
                 .then()
                 .log().body()
                 .statusCode(HttpStatus.OK.value()).extract().as(CreditDto.class);
-
         assertEquals(BigDecimal.valueOf(100000), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
     }
 
     @Test
     void getCredit_ReturnsInternalServerError_WhenItIsNotAvailableToIssueLoan(){
-
         when(calculatorService.getCredit(any(ScoringDataDto.class)))
                 .thenThrow(new LoanDeniedException("Age more than 70 years"));
-
         given()
                 .contentType(ContentType.JSON)
                 .when()

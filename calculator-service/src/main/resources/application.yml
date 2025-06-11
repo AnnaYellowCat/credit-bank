@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: calculator-service
+insurance:
+  percentage: 2.5
+salary:
+  minimum: 22000
+rate:
+  base: 15
+  adjustment:
+    minimal: 1
+    small: 2
+    medium: 3
+    big: 5

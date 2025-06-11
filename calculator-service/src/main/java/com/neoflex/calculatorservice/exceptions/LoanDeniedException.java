@@ -1,7 +1,7 @@
 package com.neoflex.calculatorservice.exceptions;
 
-import lombok.experimental.StandardException;
-
-@StandardException
 public class LoanDeniedException extends RuntimeException{
+    public LoanDeniedException(String message) {
+        super(message);
+    }
 }
