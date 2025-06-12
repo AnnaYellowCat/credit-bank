@@ -103,7 +103,6 @@ public class CalculatorService {
                     .add(bigRateAdjustment));
         }
 
-        // The rate increases by minimum rate adjustment for each dependent
         creditDto.setRate(creditDto.getRate()
                 .add(minimalRateAdjustment.multiply(BigDecimal.valueOf(scoringDataDto.getDependentAmount()))));
 
@@ -129,7 +128,7 @@ public class CalculatorService {
                     .subtract(mediumRateAdjustment));
         }
 
-        log.info("Final calculated rate: {}", creditDto.getRate());
+        log.info("Final calculated rate: {}", creditDto.getRate().setScale(2, RoundingMode.HALF_EVEN));
 
         if(creditDto.getIsInsuranceEnabled()){
             creditDto.setMonthlyPayment(calculateMonthPayment(
@@ -140,11 +139,11 @@ public class CalculatorService {
             creditDto.setMonthlyPayment(calculateMonthPayment(creditDto.getAmount(),
                     creditDto.getTerm(), creditDto.getRate()));
         }
-        log.info("Calculated monthly payment: {}", creditDto.getMonthlyPayment());
+        log.info("Calculated monthly payment: {}", creditDto.getMonthlyPayment().setScale(2, RoundingMode.HALF_EVEN));
 
         creditDto.setPsk(creditDto.getMonthlyPayment()
                 .multiply(BigDecimal.valueOf(creditDto.getTerm())));
-        log.info("Calculated psk: {}", creditDto.getPsk());
+        log.info("Calculated psk: {}", creditDto.getPsk().setScale(2, RoundingMode.HALF_EVEN));
 
         creditDto.setPaymentSchedule(calculatePaymentSchedule(creditDto));
         log.info("Calculated payment schedule with {} elements", creditDto.getPaymentSchedule().size());
@@ -175,6 +174,41 @@ public class CalculatorService {
                 .multiply(BigDecimal.valueOf(offer.getTerm())));
     }
 
+    private BigDecimal calculateRate(boolean isInsuranceEnabled, boolean isSalaryClient) {
+        if (!isInsuranceEnabled && !isSalaryClient) {
+            return baseRate.add(bigRateAdjustment);
+        }
+        if (isInsuranceEnabled && !isSalaryClient) {
+            return baseRate.add(minimalRateAdjustment);
+        }
+        if (!isInsuranceEnabled && isSalaryClient) {
+            return baseRate.subtract(minimalRateAdjustment);
+        }
+        return baseRate.subtract(mediumRateAdjustment);
+    }
+
+    private BigDecimal calculateMonthPayment(BigDecimal requestedAmount, Integer numberOfMonths,
+                                             BigDecimal rate) {
+        BigDecimal monthlyInterestRate = rate.divide(BigDecimal.valueOf(100*12), 11, RoundingMode.HALF_EVEN);
+
+        // Calculate annuity factor according to the formula
+        // (М * (1 + М) ^ S) / ((1 + М) ^ S — 1), M - monthly interest rate, S - number of months
+        BigDecimal auxiliary = (monthlyInterestRate
+                .add(BigDecimal.valueOf(1)))
+                .pow(numberOfMonths);
+        BigDecimal annuityFactor = monthlyInterestRate
+                .multiply(auxiliary)
+                .divide((auxiliary)
+                        .subtract(BigDecimal.valueOf(1)), 11, RoundingMode.HALF_EVEN);
+
+        return requestedAmount.multiply(annuityFactor);
+    }
+
+    private BigDecimal addInsurancePrice(BigDecimal amount){
+        return amount.add(insurancePercentage.multiply(amount
+                .divide(BigDecimal.valueOf(100), 11, RoundingMode.HALF_EVEN)));
+    }
+
     private void checkAge(LocalDate birthdate) {
         LocalDate today = LocalDate.now();
         Period age = Period.between(birthdate, today);
@@ -189,8 +223,8 @@ public class CalculatorService {
                 employment.getWorkExperienceTotal() < 12 || employment.getWorkExperienceCurrent() < 3
         ) {
             log.info("Loan denied: inappropriate employment criteria - status: {}, salary: {}, total experience: {} months, current experience: {} months",
-                    employment.getEmploymentStatus(), employment.getSalary(), employment.getWorkExperienceTotal(),
-                    employment.getWorkExperienceCurrent());
+                    employment.getEmploymentStatus(), employment.getSalary().setScale(2, RoundingMode.HALF_EVEN),
+                    employment.getWorkExperienceTotal(), employment.getWorkExperienceCurrent());
             throw new LoanDeniedException("Work experience less than 1 year");
         }
     }
@@ -199,38 +233,16 @@ public class CalculatorService {
         if (loanAmount
                 .compareTo(salary.multiply(BigDecimal.valueOf(6))) > 0) {
             log.info("Loan denied: Requested amount {} exceeds 6 months salary {}",
-                    loanAmount, salary.multiply(BigDecimal.valueOf(6)));
+                    loanAmount, salary.multiply(BigDecimal.valueOf(6)).setScale(2, RoundingMode.HALF_EVEN));
             throw new LoanDeniedException("The loan amount exceeds income for 6 months");
         }
-    }
-
-    private BigDecimal calculateMonthPayment(BigDecimal requestedAmount, Integer numberOfMonths, 
-                                             BigDecimal rate) {
-        BigDecimal monthlyInterestRate = rate.divide(BigDecimal.valueOf(100*12), 15, RoundingMode.HALF_EVEN);
-
-        // Calculate annuity factor according to the formula
-        // (М * (1 + М) ^ S) / ((1 + М) ^ S — 1), M - monthly interest rate, S - number of months
-        BigDecimal auxiliary = (monthlyInterestRate
-                .add(BigDecimal.valueOf(1)))
-                .pow(numberOfMonths);
-        BigDecimal annuityFactor = monthlyInterestRate
-                .multiply(auxiliary)
-                .divide((auxiliary)
-                        .subtract(BigDecimal.valueOf(1)), 15, RoundingMode.HALF_EVEN);
-
-        return requestedAmount.multiply(annuityFactor);
-    }
-
-    private BigDecimal addInsurancePrice(BigDecimal amount){
-        return amount.add(insurancePercentage.multiply(amount
-                .divide(BigDecimal.valueOf(100), 15, RoundingMode.HALF_EVEN)));
     }
 
     private List<PaymentScheduleElementDto> calculatePaymentSchedule(CreditDto creditDto) {
         List<PaymentScheduleElementDto> scheduleElements = new ArrayList<>(creditDto.getTerm());
 
         BigDecimal monthlyInterestRate = creditDto.getRate()
-                .divide(BigDecimal.valueOf(100*12), 15, RoundingMode.HALF_EVEN);
+                .divide(BigDecimal.valueOf(100*12), 11, RoundingMode.HALF_EVEN);
 
         BigDecimal remainingDebt;
         if(creditDto.getIsInsuranceEnabled()){
@@ -260,18 +272,5 @@ public class CalculatorService {
         }
 
         return scheduleElements;
-    }
-
-    private BigDecimal calculateRate(boolean isInsuranceEnabled, boolean isSalaryClient) {
-        if (!isInsuranceEnabled && !isSalaryClient) {
-            return baseRate.add(bigRateAdjustment);
-        }
-        if (isInsuranceEnabled && !isSalaryClient) {
-            return baseRate.add(minimalRateAdjustment);
-        }
-        if (!isInsuranceEnabled && isSalaryClient) {
-            return baseRate.subtract(minimalRateAdjustment);
-        }
-        return baseRate.subtract(mediumRateAdjustment);
     }
 }

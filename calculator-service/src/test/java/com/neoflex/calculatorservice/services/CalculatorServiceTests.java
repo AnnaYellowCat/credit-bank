@@ -112,6 +112,7 @@ public class CalculatorServiceTests {
                 .birthdate(LocalDate.parse("2000-01-01"))
                 .employment(EmploymentDto.builder()
                         .employmentStatus(UNEMPLOYED)
+                        .salary(BigDecimal.valueOf(100000))
                         .build())
                 .build();
         assertThrows(LoanDeniedException.class,

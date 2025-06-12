@@ -122,7 +122,7 @@ public class CalculatorControllerTests {
         CreditDto creditDto = given()
                 .contentType(ContentType.JSON)
                 .when()
-                .body(new ScoringDataDto())
+                .body(ScoringDataDto.builder().amount(BigDecimal.valueOf(100000)).build())
                 .post("/calculator/calc")
                 .then()
                 .log().body()
