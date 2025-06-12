@@ -38,7 +38,9 @@ public class CalculatorServiceTests {
                 .amount(BigDecimal.valueOf(100000))
                 .term(24)
                 .build();
+
         List<LoanOfferDto> result = calculatorService.getLoanOffers(loanStatementRequestDto);
+
         assertEquals(4, result.size());
     }
 
@@ -48,7 +50,9 @@ public class CalculatorServiceTests {
                 .amount(BigDecimal.valueOf(100000))
                 .term(24)
                 .build();
+
         List<LoanOfferDto> result = calculatorService.getLoanOffers(loanStatementRequestDto);
+
         for (int i = 0; i < result.size()-1; i++) {
             assertTrue(result.get(i).getTotalAmount()
                     .compareTo(result.get(i+1).getTotalAmount()) >= 0);
@@ -61,7 +65,9 @@ public class CalculatorServiceTests {
                 .amount(BigDecimal.valueOf(10000))
                 .term(3)
                 .build();
+
         List<LoanOfferDto> result = calculatorService.getLoanOffers(loanStatementRequestDto);
+
         assertOffer(result.get(0), BigDecimal.valueOf(10524),
                 BigDecimal.valueOf(3508), BigDecimal.valueOf(16),
                 true, false);
@@ -82,7 +88,9 @@ public class CalculatorServiceTests {
                 .amount(BigDecimal.valueOf(100000000))
                 .term(360)
                 .build();
+
         List<LoanOfferDto> result = calculatorService.getLoanOffers(loanStatementRequestDto);
+
         assertOffer(result.get(0), BigDecimal.valueOf(601566727),
                 BigDecimal.valueOf(1671018), BigDecimal.valueOf(20),
                 false, false);
@@ -102,6 +110,7 @@ public class CalculatorServiceTests {
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
                 .birthdate(LocalDate.parse("1950-01-01"))
                 .build();
+
         assertThrows(LoanDeniedException.class,
                 () -> calculatorService.getCredit(scoringDataDto));
     }
@@ -115,6 +124,7 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(100000))
                         .build())
                 .build();
+
         assertThrows(LoanDeniedException.class,
                 () -> calculatorService.getCredit(scoringDataDto));
     }
@@ -128,6 +138,7 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(10000))
                         .build())
                 .build();
+
         assertThrows(LoanDeniedException.class,
                 () -> calculatorService.getCredit(scoringDataDto));
     }
@@ -142,6 +153,7 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(25000))
                         .build())
                 .build();
+
         assertThrows(LoanDeniedException.class,
                 () -> calculatorService.getCredit(scoringDataDto));
     }
@@ -157,6 +169,7 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(25000))
                         .build())
                 .build();
+
         assertThrows(LoanDeniedException.class,
                 () -> calculatorService.getCredit(scoringDataDto));
     }
@@ -173,6 +186,7 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(25000))
                         .build())
                 .build();
+
         assertThrows(LoanDeniedException.class,
                 () -> calculatorService.getCredit(scoringDataDto));
     }
@@ -195,7 +209,9 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(25000))
                         .build())
                 .build();
+
         CreditDto creditDto = calculatorService.getCredit(scoringDataDto);
+
         assertEquals(BigDecimal.valueOf(3461), creditDto.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
         assertEquals(BigDecimal.valueOf(10385), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
         assertEquals(3, creditDto.getPaymentSchedule().size());
@@ -225,7 +241,9 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(20000000))
                         .build())
                 .build();
+
         CreditDto creditDto = calculatorService.getCredit(scoringDataDto);
+
         assertEquals(BigDecimal.valueOf(824738), creditDto.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
         assertEquals(BigDecimal.valueOf(296905745), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
         assertEquals(360, creditDto.getPaymentSchedule().size());
@@ -255,7 +273,9 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(60000))
                         .build())
                 .build();
+
         CreditDto creditDto = calculatorService.getCredit(scoringDataDto);
+
         assertEquals(BigDecimal.valueOf(3515), creditDto.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
         assertEquals(BigDecimal.valueOf(126565), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
         assertEquals(36, creditDto.getPaymentSchedule().size());
@@ -279,7 +299,9 @@ public class CalculatorServiceTests {
                         .salary(BigDecimal.valueOf(50000))
                         .build())
                 .build();
+
         CreditDto creditDto = calculatorService.getCredit(scoringDataDto);
+
         assertEquals(BigDecimal.valueOf(2608), creditDto.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
         assertEquals(BigDecimal.valueOf(62601), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
         assertEquals(24, creditDto.getPaymentSchedule().size());

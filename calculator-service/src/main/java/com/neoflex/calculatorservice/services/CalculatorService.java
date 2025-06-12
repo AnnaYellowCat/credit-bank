@@ -47,19 +47,18 @@ public class CalculatorService {
 
     public List<LoanOfferDto> getLoanOffers(LoanStatementRequestDto loanStatementRequestDto) {
         List<LoanOfferDto> loanOffers = new ArrayList<>(4);
-        for (int i = 0; i < 4; i++) loanOffers.add(new LoanOfferDto());
 
         log.info("Creating offer 1: non-salary client, no insurance");
-        enrichLoanOfferDto(loanOffers.get(0), loanStatementRequestDto, false, false);
+        loanOffers.add(createLoanOfferDto(loanStatementRequestDto, false, false));
 
         log.info("Creating offer 2: non-salary client, with insurance");
-        enrichLoanOfferDto(loanOffers.get(1), loanStatementRequestDto, true, false);
+        loanOffers.add(createLoanOfferDto(loanStatementRequestDto, true, false));
 
         log.info("Creating offer 3: salary client, no insurance");
-        enrichLoanOfferDto(loanOffers.get(2), loanStatementRequestDto, false, true);
+        loanOffers.add(createLoanOfferDto(loanStatementRequestDto, false, true));
 
         log.info("Creating offer 4: salary client, with insurance");
-        enrichLoanOfferDto(loanOffers.get(3), loanStatementRequestDto, true, true);
+        loanOffers.add(createLoanOfferDto(loanStatementRequestDto, true, true));
 
         // Sort offers from worst to best
         loanOffers.sort((o1, o2) -> o2.getTotalAmount()
@@ -67,18 +66,47 @@ public class CalculatorService {
         return loanOffers;
     }
 
+    private LoanOfferDto createLoanOfferDto(LoanStatementRequestDto loanStatementRequestDto,
+                                            boolean isInsuranceEnabled, boolean isSalaryClient) {
+        LoanOfferDto offer = new LoanOfferDto();
+        offer.setTerm(loanStatementRequestDto.getTerm());
+        offer.setRequestedAmount(loanStatementRequestDto.getAmount());
+        offer.setStatementId(UUID.randomUUID());
+        offer.setIsInsuranceEnabled(isInsuranceEnabled);
+        offer.setIsSalaryClient(isSalaryClient);
+        offer.setRate(calculateRate(isInsuranceEnabled, isSalaryClient));
+
+        if(isInsuranceEnabled){
+            offer.setMonthlyPayment(calculateMonthPayment(
+                    addInsurancePrice(offer.getRequestedAmount()),
+                    offer.getTerm(), offer.getRate()));
+        }
+        else{
+            offer.setMonthlyPayment(calculateMonthPayment(offer.getRequestedAmount(),
+                    offer.getTerm(), offer.getRate()));
+        }
+
+        offer.setTotalAmount(offer.getMonthlyPayment()
+                .multiply(BigDecimal.valueOf(offer.getTerm())));
+
+        return offer;
+    }
+
     public CreditDto getCredit(ScoringDataDto scoringDataDto) {
         log.info("Checking if it is available to issue a loan");
 
         checkAge(scoringDataDto.getBirthdate());
 
-        EmploymentDto employment = scoringDataDto.getEmployment();
-        Position position = employment.getPosition();
-        EmploymentStatus employmentStatus = employment.getEmploymentStatus();
+        BigDecimal salary = scoringDataDto.getEmployment().getSalary();
+        EmploymentStatus employmentStatus = scoringDataDto.getEmployment().getEmploymentStatus();
+        Integer workExperienceTotal = scoringDataDto.getEmployment().getWorkExperienceTotal();
+        Integer workExperienceCurrent = scoringDataDto.getEmployment().getWorkExperienceCurrent();
+        Position position = scoringDataDto.getEmployment().getPosition();
         MaritalStatus maritalStatus = scoringDataDto.getMaritalStatus();
-        checkEmployment(employment);
 
-        checkPaymentAbility(scoringDataDto.getAmount(), employment.getSalary());
+        checkEmployment(employmentStatus, salary, workExperienceTotal, workExperienceCurrent);
+
+        checkPaymentAbility(scoringDataDto.getAmount(), salary);
 
         log.info("Setting already known fields");
         CreditDto creditDto = new CreditDto();
@@ -151,29 +179,6 @@ public class CalculatorService {
         return creditDto;
     }
 
-    private void enrichLoanOfferDto(LoanOfferDto offer, LoanStatementRequestDto loanStatementRequestDto,
-                                    boolean isInsuranceEnabled, boolean isSalaryClient) {
-        offer.setTerm(loanStatementRequestDto.getTerm());
-        offer.setRequestedAmount(loanStatementRequestDto.getAmount());
-        offer.setStatementId(UUID.randomUUID());
-        offer.setIsInsuranceEnabled(isInsuranceEnabled);
-        offer.setIsSalaryClient(isSalaryClient);
-        offer.setRate(calculateRate(isInsuranceEnabled, isSalaryClient));
-
-        if(isInsuranceEnabled){
-            offer.setMonthlyPayment(calculateMonthPayment(
-                    addInsurancePrice(offer.getRequestedAmount()),
-                    offer.getTerm(), offer.getRate()));
-        }
-        else{
-            offer.setMonthlyPayment(calculateMonthPayment(offer.getRequestedAmount(),
-                    offer.getTerm(), offer.getRate()));
-        }
-
-        offer.setTotalAmount(offer.getMonthlyPayment()
-                .multiply(BigDecimal.valueOf(offer.getTerm())));
-    }
-
     private BigDecimal calculateRate(boolean isInsuranceEnabled, boolean isSalaryClient) {
         if (!isInsuranceEnabled && !isSalaryClient) {
             return baseRate.add(bigRateAdjustment);
@@ -218,13 +223,14 @@ public class CalculatorService {
         }
     }
 
-    private void checkEmployment(EmploymentDto employment){
-        if (employment.getEmploymentStatus().equals(UNEMPLOYED) || (employment.getSalary().compareTo(minimumSalary) < 0) ||
-                employment.getWorkExperienceTotal() < 12 || employment.getWorkExperienceCurrent() < 3
+    private void checkEmployment(EmploymentStatus status, BigDecimal salary,
+                                 Integer workExperienceTotal,  Integer workExperienceCurrent){
+        if (status.equals(UNEMPLOYED) || (salary.compareTo(minimumSalary) < 0) ||
+                workExperienceTotal < 12 || workExperienceCurrent < 3
         ) {
             log.info("Loan denied: inappropriate employment criteria - status: {}, salary: {}, total experience: {} months, current experience: {} months",
-                    employment.getEmploymentStatus(), employment.getSalary().setScale(2, RoundingMode.HALF_EVEN),
-                    employment.getWorkExperienceTotal(), employment.getWorkExperienceCurrent());
+                    status, salary.setScale(2, RoundingMode.HALF_EVEN),
+                    workExperienceTotal, workExperienceCurrent);
             throw new LoanDeniedException("Work experience less than 1 year");
         }
     }

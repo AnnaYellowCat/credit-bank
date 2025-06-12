@@ -75,6 +75,7 @@ public class CalculatorControllerTests {
         );
         when(calculatorService.getLoanOffers(any(LoanStatementRequestDto.class)))
                 .thenReturn(offers);
+
         List result = given()
                 .contentType(ContentType.JSON)
                 .when()
@@ -83,6 +84,7 @@ public class CalculatorControllerTests {
                 .then()
                 .log().body()
                 .statusCode(HttpStatus.OK.value()).extract().as(List.class);
+
         assertEquals(4, result.size());
     }
 
@@ -99,6 +101,7 @@ public class CalculatorControllerTests {
                 .passportSeries("4567")
                 .passportNumber("456789")
                 .build();
+
         given()
                 .contentType(ContentType.JSON)
                 .when()
@@ -117,8 +120,9 @@ public class CalculatorControllerTests {
                         .term(10)
                         .rate(BigDecimal.valueOf(10))
                         .monthlyPayment(BigDecimal.valueOf(100))
-                        .paymentSchedule(new ArrayList<PaymentScheduleElementDto>(10))
+                        .paymentSchedule(new ArrayList<>(10))
                         .build());
+
         CreditDto creditDto = given()
                 .contentType(ContentType.JSON)
                 .when()
@@ -127,6 +131,7 @@ public class CalculatorControllerTests {
                 .then()
                 .log().body()
                 .statusCode(HttpStatus.OK.value()).extract().as(CreditDto.class);
+
         assertEquals(BigDecimal.valueOf(100000), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
     }
 
@@ -134,6 +139,7 @@ public class CalculatorControllerTests {
     void getCredit_ReturnsInternalServerError_WhenItIsNotAvailableToIssueLoan(){
         when(calculatorService.getCredit(any(ScoringDataDto.class)))
                 .thenThrow(new LoanDeniedException("Age more than 70 years"));
+
         given()
                 .contentType(ContentType.JSON)
                 .when()
