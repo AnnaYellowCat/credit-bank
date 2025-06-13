@@ -24,17 +24,29 @@ import static com.neoflex.calculatorservice.enums.Position.*;
 @Slf4j
 @Service
 public class CalculatorService {
-    @Value("${rate.base}")
-    private BigDecimal baseRate;
-
     @Value("${insurance.percentage}")
     private BigDecimal insurancePercentage;
 
     @Value("${salary.minimum}")
     private BigDecimal minimumSalary;
 
-    @Value("${rate.adjustment.minimal}")
-    private BigDecimal minimalRateAdjustment;
+    @Value("${salary.months.number}")
+    private int salaryMonthsNumber;
+
+    @Value("${age.maximum}")
+    private int maximumAge;
+
+    @Value("${experience.minimum.total}")
+    private int minimumExperienceTotal;
+
+    @Value("${experience.minimum.current}")
+    private int minimumExperienceCurrent;
+
+    @Value("${rate.base}")
+    private BigDecimal baseRate;
+
+    @Value("${rate.adjustment.minimum}")
+    private BigDecimal minimumRateAdjustment;
 
     @Value("${rate.adjustment.small}")
     private BigDecimal smallRateAdjustment;
@@ -45,8 +57,16 @@ public class CalculatorService {
     @Value("${rate.adjustment.big}")
     private BigDecimal bigRateAdjustment;
 
+    private static final int TWELVE_MONTHS = 12;
+    private static final int ONE_HUNDRED_PERCENT = 100;
+    private static final int LOAN_OFFERS_NUMBER = 4;
+    private static final BigDecimal ONE = BigDecimal.valueOf(1);
+    private static final int ROUNDING_SCALE = 2;
+    private static final int ROUNDING_CALCULATING_SCALE = 11;
+    private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_EVEN;
+
     public List<LoanOfferDto> getLoanOffers(LoanStatementRequestDto loanStatementRequestDto) {
-        List<LoanOfferDto> loanOffers = new ArrayList<>(4);
+        List<LoanOfferDto> loanOffers = new ArrayList<>(LOAN_OFFERS_NUMBER);
 
         log.info("Creating offer 1: non-salary client, no insurance");
         loanOffers.add(createLoanOfferDto(loanStatementRequestDto, false, false));
@@ -132,7 +152,7 @@ public class CalculatorService {
         }
 
         creditDto.setRate(creditDto.getRate()
-                .add(minimalRateAdjustment.multiply(BigDecimal.valueOf(scoringDataDto.getDependentAmount()))));
+                .add(minimumRateAdjustment.multiply(BigDecimal.valueOf(scoringDataDto.getDependentAmount()))));
 
         if(employmentStatus.equals(SELF_EMPLOYED)) {
             creditDto.setRate(creditDto.getRate()
@@ -140,12 +160,12 @@ public class CalculatorService {
         }
         if(employmentStatus.equals(BUSINESS_OWNER)) {
             creditDto.setRate(creditDto.getRate()
-                    .add(minimalRateAdjustment));
+                    .add(minimumRateAdjustment));
         }
 
         if(position.equals(MID_MANAGER)) {
             creditDto.setRate(creditDto.getRate()
-                    .subtract(minimalRateAdjustment));
+                    .subtract(minimumRateAdjustment));
         }
         if(position.equals(TOP_MANAGER)) {
             creditDto.setRate(creditDto.getRate()
@@ -156,7 +176,7 @@ public class CalculatorService {
                     .subtract(mediumRateAdjustment));
         }
 
-        log.info("Final calculated rate: {}", creditDto.getRate().setScale(2, RoundingMode.HALF_EVEN));
+        log.info("Final calculated rate: {}", creditDto.getRate().setScale(ROUNDING_SCALE, ROUNDING_MODE));
 
         if(creditDto.getIsInsuranceEnabled()){
             creditDto.setMonthlyPayment(calculateMonthPayment(
@@ -167,11 +187,11 @@ public class CalculatorService {
             creditDto.setMonthlyPayment(calculateMonthPayment(creditDto.getAmount(),
                     creditDto.getTerm(), creditDto.getRate()));
         }
-        log.info("Calculated monthly payment: {}", creditDto.getMonthlyPayment().setScale(2, RoundingMode.HALF_EVEN));
+        log.info("Calculated monthly payment: {}", creditDto.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
 
         creditDto.setPsk(creditDto.getMonthlyPayment()
                 .multiply(BigDecimal.valueOf(creditDto.getTerm())));
-        log.info("Calculated psk: {}", creditDto.getPsk().setScale(2, RoundingMode.HALF_EVEN));
+        log.info("Calculated psk: {}", creditDto.getPsk().setScale(ROUNDING_SCALE, ROUNDING_MODE));
 
         creditDto.setPaymentSchedule(calculatePaymentSchedule(creditDto));
         log.info("Calculated payment schedule with {} elements", creditDto.getPaymentSchedule().size());
@@ -184,63 +204,65 @@ public class CalculatorService {
             return baseRate.add(bigRateAdjustment);
         }
         if (isInsuranceEnabled && !isSalaryClient) {
-            return baseRate.add(minimalRateAdjustment);
+            return baseRate.add(minimumRateAdjustment);
         }
         if (!isInsuranceEnabled && isSalaryClient) {
-            return baseRate.subtract(minimalRateAdjustment);
+            return baseRate.subtract(minimumRateAdjustment);
         }
         return baseRate.subtract(mediumRateAdjustment);
     }
 
     private BigDecimal calculateMonthPayment(BigDecimal requestedAmount, Integer numberOfMonths,
                                              BigDecimal rate) {
-        BigDecimal monthlyInterestRate = rate.divide(BigDecimal.valueOf(100*12), 11, RoundingMode.HALF_EVEN);
+        BigDecimal monthlyInterestRate = rate
+                .divide(BigDecimal.valueOf(ONE_HUNDRED_PERCENT*TWELVE_MONTHS), ROUNDING_CALCULATING_SCALE, ROUNDING_MODE);
 
         // Calculate annuity factor according to the formula
         // (М * (1 + М) ^ S) / ((1 + М) ^ S — 1), M - monthly interest rate, S - number of months
         BigDecimal auxiliary = (monthlyInterestRate
-                .add(BigDecimal.valueOf(1)))
+                .add(ONE))
                 .pow(numberOfMonths);
         BigDecimal annuityFactor = monthlyInterestRate
                 .multiply(auxiliary)
                 .divide((auxiliary)
-                        .subtract(BigDecimal.valueOf(1)), 11, RoundingMode.HALF_EVEN);
+                        .subtract(ONE), ROUNDING_CALCULATING_SCALE, ROUNDING_MODE);
 
         return requestedAmount.multiply(annuityFactor);
     }
 
     private BigDecimal addInsurancePrice(BigDecimal amount){
         return amount.add(insurancePercentage.multiply(amount
-                .divide(BigDecimal.valueOf(100), 11, RoundingMode.HALF_EVEN)));
+                .divide(BigDecimal.valueOf(ONE_HUNDRED_PERCENT), ROUNDING_CALCULATING_SCALE, ROUNDING_MODE)));
     }
 
     private void checkAge(LocalDate birthdate) {
         LocalDate today = LocalDate.now();
         Period age = Period.between(birthdate, today);
-        if (age.getYears() > 70) {
-            log.info("Loan denied: Client age {} is more than 70 years", age.getYears());
-            throw new LoanDeniedException("Age more than 70 years");
+        if (age.getYears() > maximumAge) {
+            log.info("Loan denied: Client age {} is more than {} years", age.getYears(), maximumAge);
+            throw new LoanDeniedException("Age more than " + maximumAge + " years");
         }
     }
 
     private void checkEmployment(EmploymentStatus status, BigDecimal salary,
                                  Integer workExperienceTotal,  Integer workExperienceCurrent){
         if (status.equals(UNEMPLOYED) || (salary.compareTo(minimumSalary) < 0) ||
-                workExperienceTotal < 12 || workExperienceCurrent < 3
+                workExperienceTotal < minimumExperienceTotal || workExperienceCurrent < minimumExperienceCurrent
         ) {
             log.info("Loan denied: inappropriate employment criteria - status: {}, salary: {}, total experience: {} months, current experience: {} months",
-                    status, salary.setScale(2, RoundingMode.HALF_EVEN),
+                    status, salary.setScale(ROUNDING_SCALE, ROUNDING_MODE),
                     workExperienceTotal, workExperienceCurrent);
-            throw new LoanDeniedException("Work experience less than 1 year");
+            throw new LoanDeniedException("Work experience less than " + minimumExperienceTotal + " months");
         }
     }
 
     private void checkPaymentAbility(BigDecimal loanAmount, BigDecimal salary) {
         if (loanAmount
-                .compareTo(salary.multiply(BigDecimal.valueOf(6))) > 0) {
-            log.info("Loan denied: Requested amount {} exceeds 6 months salary {}",
-                    loanAmount, salary.multiply(BigDecimal.valueOf(6)).setScale(2, RoundingMode.HALF_EVEN));
-            throw new LoanDeniedException("The loan amount exceeds income for 6 months");
+                .compareTo(salary.multiply(BigDecimal.valueOf(salaryMonthsNumber))) > 0) {
+            log.info("Loan denied: Requested amount {} exceeds {} months salary {}",
+                    loanAmount, salaryMonthsNumber, salary
+                            .multiply(BigDecimal.valueOf(salaryMonthsNumber)).setScale(ROUNDING_SCALE, ROUNDING_MODE));
+            throw new LoanDeniedException("The loan amount exceeds income for " + salaryMonthsNumber + " months");
         }
     }
 
@@ -248,7 +270,7 @@ public class CalculatorService {
         List<PaymentScheduleElementDto> scheduleElements = new ArrayList<>(creditDto.getTerm());
 
         BigDecimal monthlyInterestRate = creditDto.getRate()
-                .divide(BigDecimal.valueOf(100*12), 11, RoundingMode.HALF_EVEN);
+                .divide(BigDecimal.valueOf(ONE_HUNDRED_PERCENT*TWELVE_MONTHS), ROUNDING_CALCULATING_SCALE, ROUNDING_MODE);
 
         BigDecimal remainingDebt;
         if(creditDto.getIsInsuranceEnabled()){

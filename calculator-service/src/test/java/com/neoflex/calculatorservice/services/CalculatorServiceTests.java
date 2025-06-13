@@ -20,14 +20,20 @@ import static org.junit.jupiter.api.Assertions.*;
         properties = {
                 "insurance.percentage=2.5",
                 "salary.minimum=22000",
+                "salary.month.number=6",
+                "age.maximum=70",
+                "experience.minimum.total=6",
+                "experience.minimum.current=3",
                 "rate.base=15",
-                "rate.adjustment.minimal=1",
+                "rate.adjustment.minimum=1",
                 "rate.adjustment.small=2",
                 "rate.adjustment.medium=3",
                 "rate.adjustment.big=5"
         },
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CalculatorServiceTests {
+    private static final int ROUNDING_SCALE = 0;
+    private static final RoundingMode ROUNDING_MODE = RoundingMode.DOWN;
 
     @Autowired
     private CalculatorService calculatorService;
@@ -212,8 +218,8 @@ public class CalculatorServiceTests {
 
         CreditDto creditDto = calculatorService.getCredit(scoringDataDto);
 
-        assertEquals(BigDecimal.valueOf(3461), creditDto.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
-        assertEquals(BigDecimal.valueOf(10385), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
+        assertEquals(BigDecimal.valueOf(3461), creditDto.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(BigDecimal.valueOf(10385), creditDto.getPsk().setScale(ROUNDING_SCALE, ROUNDING_MODE));
         assertEquals(3, creditDto.getPaymentSchedule().size());
         assertPaymentScheduleElement(creditDto.getPaymentSchedule().get(0), LocalDate.now().plusMonths(1),
                 BigDecimal.valueOf(3461), BigDecimal.valueOf(191), BigDecimal.valueOf(3270), BigDecimal.valueOf(6729));
@@ -244,8 +250,8 @@ public class CalculatorServiceTests {
 
         CreditDto creditDto = calculatorService.getCredit(scoringDataDto);
 
-        assertEquals(BigDecimal.valueOf(824738), creditDto.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
-        assertEquals(BigDecimal.valueOf(296905745), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
+        assertEquals(BigDecimal.valueOf(824738), creditDto.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(BigDecimal.valueOf(296905745), creditDto.getPsk().setScale(ROUNDING_SCALE, ROUNDING_MODE));
         assertEquals(360, creditDto.getPaymentSchedule().size());
         assertPaymentScheduleElement(creditDto.getPaymentSchedule().get(0), LocalDate.now().plusMonths(1),
                 BigDecimal.valueOf(824738), BigDecimal.valueOf(768750), BigDecimal.valueOf(55988), BigDecimal.valueOf(102444011));
@@ -276,8 +282,8 @@ public class CalculatorServiceTests {
 
         CreditDto creditDto = calculatorService.getCredit(scoringDataDto);
 
-        assertEquals(BigDecimal.valueOf(3515), creditDto.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
-        assertEquals(BigDecimal.valueOf(126565), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
+        assertEquals(BigDecimal.valueOf(3515), creditDto.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(BigDecimal.valueOf(126565), creditDto.getPsk().setScale(ROUNDING_SCALE, ROUNDING_MODE));
         assertEquals(36, creditDto.getPaymentSchedule().size());
     }
 
@@ -302,8 +308,8 @@ public class CalculatorServiceTests {
 
         CreditDto creditDto = calculatorService.getCredit(scoringDataDto);
 
-        assertEquals(BigDecimal.valueOf(2608), creditDto.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
-        assertEquals(BigDecimal.valueOf(62601), creditDto.getPsk().setScale(0, RoundingMode.DOWN));
+        assertEquals(BigDecimal.valueOf(2608), creditDto.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(BigDecimal.valueOf(62601), creditDto.getPsk().setScale(ROUNDING_SCALE, ROUNDING_MODE));
         assertEquals(24, creditDto.getPaymentSchedule().size());
     }
 
@@ -313,9 +319,9 @@ public class CalculatorServiceTests {
                              BigDecimal expectedRate,
                              boolean isInsuranceEnabled,
                              boolean isSalaryClient) {
-        assertEquals(expectedTotalAmount, offer.getTotalAmount().setScale(0, RoundingMode.DOWN));
-        assertEquals(expectedMonthlyPayment, offer.getMonthlyPayment().setScale(0, RoundingMode.DOWN));
-        assertEquals(expectedRate, offer.getRate().setScale(0, RoundingMode.DOWN));
+        assertEquals(expectedTotalAmount, offer.getTotalAmount().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(expectedMonthlyPayment, offer.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(expectedRate, offer.getRate().setScale(ROUNDING_SCALE, ROUNDING_MODE));
         assertEquals(isInsuranceEnabled, offer.getIsInsuranceEnabled());
         assertEquals(isSalaryClient, offer.getIsSalaryClient());
     }
@@ -324,9 +330,9 @@ public class CalculatorServiceTests {
                                               BigDecimal expectedTotalPayment, BigDecimal expectedInterestPayment,
                                               BigDecimal expectedDebtPayment, BigDecimal expectedRemainingDebt) {
         assertEquals(expectedDate, element.getDate());
-        assertEquals(expectedTotalPayment, element.getTotalPayment().setScale(0, RoundingMode.DOWN));
-        assertEquals(expectedInterestPayment, element.getInterestPayment().setScale(0, RoundingMode.DOWN));
-        assertEquals(expectedDebtPayment, element.getDebtPayment().setScale(0, RoundingMode.DOWN));
-        assertEquals(expectedRemainingDebt, element.getRemainingDebt().setScale(0, RoundingMode.DOWN));
+        assertEquals(expectedTotalPayment, element.getTotalPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(expectedInterestPayment, element.getInterestPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(expectedDebtPayment, element.getDebtPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE));
+        assertEquals(expectedRemainingDebt, element.getRemainingDebt().setScale(ROUNDING_SCALE, ROUNDING_MODE));
     }
 }

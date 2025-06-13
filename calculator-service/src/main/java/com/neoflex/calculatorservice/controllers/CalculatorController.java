@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
@@ -25,6 +26,8 @@ import java.util.List;
         description = "Controller for calculation of loan parameters"
 )
 public class CalculatorController {
+    private static final int ROUNDING_SCALE = 2;
+    private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_EVEN;
     private final CalculatorService calculatorService;
 
     public CalculatorController(CalculatorService calculatorService) {
@@ -45,14 +48,14 @@ public class CalculatorController {
         log.info("Loan offers request for {} {}, amount: {}, term: {} months",
                 loanStatementRequestDto.getFirstName(),
                 loanStatementRequestDto.getLastName(),
-                loanStatementRequestDto.getAmount().setScale(2, RoundingMode.HALF_EVEN),
+                loanStatementRequestDto.getAmount().setScale(ROUNDING_SCALE, ROUNDING_MODE),
                 loanStatementRequestDto.getTerm());
         List<LoanOfferDto> offers = calculatorService.getLoanOffers(loanStatementRequestDto);
         log.info("Generated {} loan offers", offers.size());
         for (int i=0; i<offers.size(); i++) {
             log.info("Offer {} - rate: {}%, total amount: {}",
-                    i+1, offers.get(i).getRate().setScale(2, RoundingMode.HALF_EVEN),
-                    offers.get(i).getTotalAmount().setScale(2, RoundingMode.HALF_EVEN));
+                    i+1, offers.get(i).getRate().setScale(ROUNDING_SCALE, ROUNDING_MODE),
+                    offers.get(i).getTotalAmount().setScale(ROUNDING_SCALE, ROUNDING_MODE));
         }
         return ResponseEntity.ok(offers);
     }
@@ -70,14 +73,14 @@ public class CalculatorController {
         log.info("Received credit calculation request for {} {}, amount: {}, term: {} months",
                 scoringDataDto.getFirstName(),
                 scoringDataDto.getLastName(),
-                scoringDataDto.getAmount().setScale(2, RoundingMode.HALF_EVEN),
+                scoringDataDto.getAmount().setScale(ROUNDING_SCALE, ROUNDING_MODE),
                 scoringDataDto.getTerm());
         CreditDto credit = calculatorService.getCredit(scoringDataDto);
         log.info("Credit calculation result - total amount: {}, term: {}, rate: {}, monthly payment: {}, payment schedule with {} elements",
-                credit.getPsk().setScale(2, RoundingMode.HALF_EVEN),
+                credit.getPsk().setScale(ROUNDING_SCALE, ROUNDING_MODE),
                 credit.getTerm(),
-                credit.getRate().setScale(2, RoundingMode.HALF_EVEN),
-                credit.getMonthlyPayment().setScale(2, RoundingMode.HALF_EVEN),
+                credit.getRate().setScale(ROUNDING_SCALE, ROUNDING_MODE),
+                credit.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE),
                 credit.getPaymentSchedule().size());
         return ResponseEntity.ok(credit);
     }

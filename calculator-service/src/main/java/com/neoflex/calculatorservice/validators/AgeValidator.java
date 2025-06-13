@@ -10,9 +10,10 @@ import java.time.Period;
 
 @Component
 public class AgeValidator implements ConstraintValidator<Adult, LocalDate> {
+    final int ADULT_AGE = 18;
     @Override
     public boolean isValid(LocalDate birthdate, ConstraintValidatorContext context) {
         Period age = Period.between(birthdate, LocalDate.now());
-        return  age.getYears() >= 18;
+        return age.getYears() >= ADULT_AGE;
     }
 }
