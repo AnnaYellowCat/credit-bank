@@ -1,0 +1,267 @@
+openapi: 3.0.1
+info:
+  title: Deal Service API
+  version: 1.0.0
+  description: API for getting offers, choosing one of the offers and completion of registration
+
+servers:
+  - url: http://localhost:8081
+    description: Local server
+
+paths:
+  /deal/statement:
+    post:
+      tags:
+        - Deal
+      operationId: getOffers
+      summary: Getting loan offers
+      description: Gets loan offers with all possible loan terms
+      requestBody:
+        description: Data for getting loan offers
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanStatementRequestDto'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoanOfferDto'
+        '424':
+          description: Failed to get info from calculator service
+
+  /deal/offer/select:
+    post:
+      tags:
+        - Deal
+      operationId: selectOffer
+      summary: Choosing one of the offers
+      description: Accepts one offer
+      requestBody:
+        description: Data for choosing one of the loan offer
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanOfferDto'
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Statement not found
+
+  /deal/calculate/{statementId}:
+    post:
+      tags:
+        - Deal
+      operationId: finishRegistration
+      summary: Completion of registration
+      description: Finish registration and makes a full calculation of the loan
+      requestBody:
+        description: Data for completion of registration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinishRegistrationRequestDto'
+      parameters:
+        - name: statementId
+          in: path
+          description: Unique id of loan statement
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Statement not found
+        '424':
+          description: Failed to get info from calculator service
+
+components:
+  schemas:
+    LoanStatementRequestDto:
+      type: object
+      description: Data for creating loan offers
+      properties:
+        amount:
+          type: number
+          format: bigdecimal
+          description: Requested loan amount
+          example: 100000
+        term:
+          type: integer
+          description: Loan term, number of months
+          example: 36
+        firstName:
+          type: string
+          description: First name of client
+          example: "Ivan"
+        lastName:
+          type: string
+          description: Last name of client
+          example: "Ivanov"
+        middleName:
+          type: string
+          description: Middle name of client
+          example: "Ivanovich"
+        email:
+          type: string
+          description: Email of client
+          example: "ivan@mail.ru"
+        birthDate:
+          type: string
+          format: date
+          description: Date of birth of client
+          example: "2000-01-01"
+        passportSeries:
+          type: string
+          description: Passport series of client
+          example: "4567"
+        passportNumber:
+          type: string
+          description: Passport number of client
+          example: "578430"
+      required:
+        - amount
+        - term
+        - firstName
+        - lastName
+        - email
+        - birthDate
+        - passportSeries
+        - passportNumber
+
+    LoanOfferDto:
+      type: object
+      description: Information about loan offer
+      properties:
+        statementId:
+          type: string
+          format: uuid
+          description: Unique id of loan statement
+          example: "39h479Lf7dGG90"
+        requestedAmount:
+          type: number
+          format: bigdecimal
+          description: Requested loan amount
+          example: 100000
+        totalAmount:
+          type: number
+          format: bigdecimal
+          description: Loan amount including interest and insurance costs
+          example: 130000
+        term:
+          type: integer
+          description: Loan term, number of months
+          example: 36
+        monthlyPayment:
+          type: number
+          format: bigdecimal
+          description: The amount of payment for every month
+          example: 10000
+        rate:
+          type: number
+          format: bigdecimal
+          description: Loan rate calculated depending on parameters, percentages
+          example: 22
+        isInsuranceEnabled:
+          type: boolean
+          description: Information about whether insurance is included
+          example: true
+        isSalaryClient:
+          type: boolean
+          description: Information about whether the client is a salary client
+          example: false
+      required:
+        - statementId
+        - requestedAmount
+        - totalAmount
+        - term
+        - monthlyPayment
+        - rate
+        - isInsuranceEnabled
+        - isSalaryClient
+
+    FinishRegistrationRequestDto:
+      type: object
+      description: Information about loan offer
+      properties:
+        gender:
+          type: string
+          description: Gender of client (MALE, FEMALE, NON_BINARY)
+          example: "MALE"
+        maritalStatus:
+          type: string
+          description: Marital status of client (MARRIED, SINGLE, DIVORCED, WIDOW_WIDOWER)
+          example: "SINGLE"
+        dependentAmount:
+          type: integer
+          description: Number of client's dependents
+          example: 0
+        passportIssueDate:
+          type: string
+          format: date
+          description: Date of issue of the client's passport
+          example: "2021-01-01"
+        passportIssueBranch:
+          type: string
+          description: Client's passport issuing department
+          example: "Passport issuance department of the federal service for the saratov region"
+        employment:
+          $ref: '#/components/schemas/EmploymentDto'
+        accountNumber:
+          type: string
+          description: Client's account number
+          example: "4654335"
+      required:
+        - gender
+        - maritalStatus
+        - dependentAmount
+        - passportIssueDate
+        - passportIssueBranch
+        - employment
+        - accountNumber
+
+    EmploymentDto:
+      type: object
+      description: Detailed information about employment
+      properties:
+        employmentStatus:
+          type: string
+          description: Employment status of client (UNEMPLOYED, SELF_EMPLOYED, EMPLOYED, BUSINESS_OWNER)
+          example: "EMPLOYED"
+        employerINN:
+          type: string
+          description: Taxpayer identification number of client's employer
+          example: "520205004556"
+        salary:
+          type: number
+          format: bigdecimal
+          description: Size of client's salary
+          example: 40000
+        position:
+          type: string
+          description: Position at work (WORKER, MID_MANAGER, TOP_MANAGER, OWNER)
+          example: "WORKER"
+        workExperienceTotal:
+          type: integer
+          description: Total work experience, number of months
+          example: 36
+        workExperienceCurrent:
+          type: integer
+          description: Current work experience, number of months
+          example: 24
+      required:
+        - employmentStatus
+        - employerINN
+        - salary
+        - position
+        - workExperienceTotal
+        - workExperienceCurrent

@@ -1,4 +1,4 @@
 /.idea/
-/calculator-service/target/
-/calculator-service/mvnw
-/calculator-service/mvnw.cmd
+**/target/
+**/mvnw
+**/mvnw.cmd
