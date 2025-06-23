@@ -115,7 +115,7 @@ public class CalculatorService {
     public CreditDto getCredit(ScoringDataDto scoringDataDto) {
         log.info("Checking if it is available to issue a loan");
 
-        checkAge(scoringDataDto.getBirthdate());
+        checkAge(scoringDataDto.getBirthDate());
 
         BigDecimal salary = scoringDataDto.getEmployment().getSalary();
         EmploymentStatus employmentStatus = scoringDataDto.getEmployment().getEmploymentStatus();

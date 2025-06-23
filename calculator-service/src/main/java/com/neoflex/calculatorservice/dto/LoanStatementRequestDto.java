@@ -48,7 +48,7 @@ public class LoanStatementRequestDto {
     @Past
     @Adult
     @Schema(description = "Date of birth of client", example = "2000-01-01")
-    private LocalDate birthdate;
+    private LocalDate birthDate;
 
     @NotNull
     @Pattern(regexp = "^[0-9]{4}$")

@@ -15,6 +15,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Loan offer data", name = "LoanOfferDto")
 public class LoanOfferDto {
       @Schema(description = "Unique id of loan statement", name = "647s37fb890d03s499g8")
       private UUID statementId;
