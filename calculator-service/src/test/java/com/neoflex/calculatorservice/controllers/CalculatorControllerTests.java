@@ -50,7 +50,7 @@ public class CalculatorControllerTests {
                 .lastName("Ivanov")
                 .middleName("Ivanovich")
                 .email("ivan@mail.ru")
-                .birthdate(LocalDate.parse("2000-01-01"))
+                .birthDate(LocalDate.parse("2000-01-01"))
                 .passportSeries("4567")
                 .passportNumber("456789")
                 .build();
@@ -96,7 +96,7 @@ public class CalculatorControllerTests {
                 .lastName("Ivanov")
                 .middleName("Ivanovich")
                 .email("ivan@mail.ru")
-                .birthdate(LocalDate.parse("2015-01-01"))
+                .birthDate(LocalDate.parse("2015-01-01"))
                 .passportSeries("4567")
                 .passportNumber("456789")
                 .build();

@@ -114,7 +114,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ThrowsLoanDeniedException_WhenAgeIsMoreThan70(){
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("1950-01-01"))
+                .birthDate(LocalDate.parse("1950-01-01"))
                 .build();
 
         assertThrows(LoanDeniedException.class,
@@ -124,7 +124,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ThrowsLoanDeniedException_WhenUnemployed(){
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("2000-01-01"))
+                .birthDate(LocalDate.parse("2000-01-01"))
                 .employment(EmploymentDto.builder()
                         .employmentStatus(UNEMPLOYED)
                         .salary(BigDecimal.valueOf(100000))
@@ -138,7 +138,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ThrowsLoanDeniedException_WhenSalaryIsLessThanMinimum(){
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("2000-01-01"))
+                .birthDate(LocalDate.parse("2000-01-01"))
                 .employment(EmploymentDto.builder()
                         .employmentStatus(EMPLOYED)
                         .salary(BigDecimal.valueOf(10000))
@@ -152,7 +152,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ThrowsLoanDeniedException_WhenTotalWorkExperienceLessThan12(){
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("2000-01-01"))
+                .birthDate(LocalDate.parse("2000-01-01"))
                 .employment(EmploymentDto.builder()
                         .employmentStatus(EMPLOYED)
                         .workExperienceTotal(1)
@@ -167,7 +167,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ThrowsLoanDeniedException_WhenCurrentWorkExperienceLessThan3(){
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("2000-01-01"))
+                .birthDate(LocalDate.parse("2000-01-01"))
                 .employment(EmploymentDto.builder()
                         .employmentStatus(EMPLOYED)
                         .workExperienceTotal(12)
@@ -183,7 +183,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ThrowsLoanDeniedException_WhenSalaryIsTooSmall(){
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("2000-01-01"))
+                .birthDate(LocalDate.parse("2000-01-01"))
                 .amount(BigDecimal.valueOf(100000000))
                 .employment(EmploymentDto.builder()
                         .employmentStatus(EMPLOYED)
@@ -200,7 +200,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ReturnsCorrectCreditData_WhenInputValuesAreMinimal(){
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("2000-01-01"))
+                .birthDate(LocalDate.parse("2000-01-01"))
                 .amount(BigDecimal.valueOf(10000))
                 .term(3)
                 .maritalStatus(SINGLE)
@@ -232,7 +232,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ReturnsCorrectCreditData_WhenInputValuesAreMaximal(){
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("1980-01-01"))
+                .birthDate(LocalDate.parse("1980-01-01"))
                 .amount(BigDecimal.valueOf(100000000))
                 .term(360)
                 .maritalStatus(MARRIED)
@@ -264,7 +264,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ReturnsCorrectCreditData_WhenNoInsuranceAndSalaryClient() {
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("1990-01-01"))
+                .birthDate(LocalDate.parse("1990-01-01"))
                 .amount(BigDecimal.valueOf(100000))
                 .term(36)
                 .maritalStatus(WIDOW_WIDOWER)
@@ -290,7 +290,7 @@ public class CalculatorServiceTests {
     @Test
     void getCredit_ReturnsCorrectCreditData_WhenInsuranceAndNotSalaryClient() {
         ScoringDataDto scoringDataDto = ScoringDataDto.builder()
-                .birthdate(LocalDate.parse("1990-01-01"))
+                .birthDate(LocalDate.parse("1990-01-01"))
                 .amount(BigDecimal.valueOf(50000))
                 .term(24)
                 .maritalStatus(DIVORCED)
