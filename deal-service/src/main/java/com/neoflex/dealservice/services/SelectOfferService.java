@@ -27,8 +27,9 @@ public class SelectOfferService {
     @Transactional
     public void selectOffer(LoanOfferDto offer) {
         Statement statement = statementRepository.getReferenceById(offer.getStatementId());
-        try{
+        try {
             statement.setAppliedOffer(offer);
+            log.debug("Statement with id {} found", offer.getStatementId());
             statement.setStatus(APPROVED);
             StatementStatusHistoryDto statusHistoryElement = StatementStatusHistoryDto.builder()
                     .status(APPROVED)
@@ -37,9 +38,8 @@ public class SelectOfferService {
                     .build();
             statement.getStatusHistory().add(statusHistoryElement);
             statementRepository.save(statement);
-            log.info("Selected loan offer with rate {} and total amount {} saved", offer.getRate(), offer.getTotalAmount());
-        }
-        catch (EntityNotFoundException | NullPointerException e) {
+            log.debug("Statement with id {} updated", offer.getStatementId());
+        } catch (EntityNotFoundException | NullPointerException e) {
             log.error("Statement with id {} not found", offer.getStatementId());
             throw new StatementNotFoundException("Statement not found");
         }

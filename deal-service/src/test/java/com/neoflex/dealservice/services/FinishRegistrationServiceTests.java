@@ -6,6 +6,7 @@ import com.neoflex.dealservice.dto.*;
 import com.neoflex.dealservice.entities.*;
 import com.neoflex.dealservice.exceptions.CalculatorServiceException;
 import com.neoflex.dealservice.exceptions.StatementNotFoundException;
+import com.neoflex.dealservice.mappers.ClientMapper;
 import com.neoflex.dealservice.repositories.ClientRepository;
 import com.neoflex.dealservice.repositories.CreditRepository;
 import com.neoflex.dealservice.repositories.StatementRepository;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -44,6 +46,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@ActiveProfiles("test")
 public class FinishRegistrationServiceTests {
     @Autowired
     private FinishRegistrationService finishRegistrationService;
@@ -59,6 +62,9 @@ public class FinishRegistrationServiceTests {
 
     @MockitoBean
     private RestTemplate restTemplate;
+
+    @Autowired
+    private ClientMapper clientMapper;
 
     @Test
     public void finishRegistration_UpdatesDataAndCreatesCredit_WhenStatementExistsAndCalculatorServiceReturnsCredit() {
@@ -82,6 +88,7 @@ public class FinishRegistrationServiceTests {
                 .build();
         Client client = Client.builder()
                 .passport(new Passport())
+                .employment(clientMapper.createEmployment(employment))
                 .build();
         List<StatementStatusHistoryDto> statusHistory = new ArrayList<>();
         Statement statement = Statement.builder()
@@ -231,7 +238,7 @@ public class FinishRegistrationServiceTests {
     }
 
     @Test
-    public void finishRegistration_UpdatesDataAndCreatesCredit_ThrowsCalculatorServiceException_WhenCalculatorServiceReturnsStatus503(){
+    public void finishRegistration_UpdatesDataAndCreatesCredit_ThrowsCalculatorServiceException_WhenCalculatorServiceReturnsStatus503() {
         UUID statementId = UUID.randomUUID();
         EmploymentDto employment = EmploymentDto.builder()
                 .employmentStatus(String.valueOf(EMPLOYED))

@@ -24,7 +24,8 @@ public class DealController implements DealApi {
     private final SelectOfferService selectOfferService;
     private final FinishRegistrationService finishRegistrationService;
 
-    public DealController(CreateStatementService createStatementService, FinishRegistrationService finishRegistrationService, SelectOfferService selectOfferService) {
+    public DealController(CreateStatementService createStatementService, FinishRegistrationService finishRegistrationService,
+                          SelectOfferService selectOfferService) {
         this.createStatementService = createStatementService;
         this.finishRegistrationService = finishRegistrationService;
         this.selectOfferService = selectOfferService;
@@ -35,11 +36,12 @@ public class DealController implements DealApi {
     public ResponseEntity<List<LoanOfferDto>> getOffers(@RequestBody LoanStatementRequestDto loanStatementRequestDto) {
         log.info("Received request for loan offers: loan amount {}, term {}",
                 loanStatementRequestDto.getAmount(), loanStatementRequestDto.getTerm());
-        try{
+        try {
             List<LoanOfferDto> offers = createStatementService.getOffers(loanStatementRequestDto);
+            log.info("Success: loan offers with total amount {}, {}, {} and {} returned", offers.get(0).getTotalAmount(),
+                    offers.get(1).getTotalAmount(), offers.get(2).getTotalAmount(), offers.get(3).getTotalAmount());
             return ResponseEntity.ok(offers);
-        }
-        catch(CalculatorServiceException e){
+        } catch (CalculatorServiceException e) {
             return ResponseEntity.status(HttpStatus.FAILED_DEPENDENCY).build();
         }
     }
@@ -49,11 +51,12 @@ public class DealController implements DealApi {
     public ResponseEntity<Void> selectOffer(@RequestBody LoanOfferDto loanOfferDto) {
         log.info("Received request for choosing loan offer: rate {}, total amount {}",
                 loanOfferDto.getRate(), loanOfferDto.getTotalAmount());
-        try{
+        try {
             selectOfferService.selectOffer(loanOfferDto);
+            log.info("Success: selected loan offer with rate {} and total amount {} saved",
+                    loanOfferDto.getRate(), loanOfferDto.getTotalAmount());
             return ResponseEntity.ok().build();
-        }
-        catch(StatementNotFoundException e){
+        } catch (StatementNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
@@ -63,14 +66,13 @@ public class DealController implements DealApi {
     public ResponseEntity<Void> finishRegistration(@PathVariable String statementId,
                                                    @RequestBody FinishRegistrationRequestDto finishRegistrationRequestDto) {
         log.info("Received request for completion of registration for statement with id {}", statementId);
-        try{
+        try {
             finishRegistrationService.finishRegistration(finishRegistrationRequestDto, statementId);
+            log.info("Success: registration finished for statement with id {}", statementId);
             return ResponseEntity.ok().build();
-        }
-        catch(StatementNotFoundException e){
+        } catch (StatementNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-        catch(CalculatorServiceException e){
+        } catch (CalculatorServiceException e) {
             return ResponseEntity.status(HttpStatus.FAILED_DEPENDENCY).build();
         }
     }

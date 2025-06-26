@@ -26,7 +26,7 @@ public class Statement {
     @ManyToOne
     @JoinColumn(name = "client_id", referencedColumnName = "clientId")
     private Client client;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "credit_id", referencedColumnName = "creditId")
     private Credit credit;
     @Enumerated(EnumType.STRING)

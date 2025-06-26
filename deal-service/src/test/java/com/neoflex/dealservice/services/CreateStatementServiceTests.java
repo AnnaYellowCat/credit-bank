@@ -17,12 +17,14 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.neoflex.dealservice.enums.ApplicationStatus.PREAPPROVAL;
@@ -33,6 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@ActiveProfiles("test")
 public class CreateStatementServiceTests {
     @Autowired
     private CreateStatementService createStatementService;
@@ -47,7 +50,7 @@ public class CreateStatementServiceTests {
     private RestTemplate restTemplate;
 
     @Test
-    public void getOffers_SavesDataAndReturnsLoanOffers_WhenCalculatorServiceReturnsOffers(){
+    public void getOffers_SavesDataAndReturnsLoanOffers_WhenCalculatorServiceReturnsOffers() {
         LoanStatementRequestDto loanStatementRequestDto = LoanStatementRequestDto.builder()
                 .amount(BigDecimal.valueOf(100000))
                 .term(36)
@@ -61,12 +64,12 @@ public class CreateStatementServiceTests {
                 .build();
         when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(statementRepository.save(any(Statement.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        ResponseEntity<List<LoanOfferDto>> mockResponse = ResponseEntity.ok(List.of(
-                new LoanOfferDto(),
-                new LoanOfferDto(),
-                new LoanOfferDto(),
-                new LoanOfferDto()
-        ));
+        List<LoanOfferDto> loanOffers = new ArrayList<>();
+        loanOffers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(40000)).build());
+        loanOffers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(30000)).build());
+        loanOffers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(20000)).build());
+        loanOffers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(10000)).build());
+        ResponseEntity<List<LoanOfferDto>> mockResponse = ResponseEntity.ok(loanOffers);
         when(restTemplate.exchange(
                 anyString(),
                 eq(HttpMethod.POST),
@@ -86,6 +89,7 @@ public class CreateStatementServiceTests {
         assertEquals("Albertovna", client.getMiddleName());
         assertEquals("rose@gmail.com", client.getEmail());
         assertEquals(LocalDate.parse("1909-03-01"), client.getBirthDate());
+        assertNotNull(client.getPassport().getPassportId());
         assertEquals("1234", client.getPassport().getSeries());
         assertEquals("123456", client.getPassport().getNumber());
         verify(statementRepository).save(statementCaptor.capture());
@@ -99,6 +103,10 @@ public class CreateStatementServiceTests {
         assertEquals(PREAPPROVAL, statusHistoryElement.getStatus());
         assertEquals(statement.getCreationDate(), statusHistoryElement.getTime());
         assertEquals(AUTOMATIC, statusHistoryElement.getChangeType());
+        for (int i = 0; i < offers.size() - 1; i++) {
+            assertTrue(offers.get(i).getTotalAmount()
+                    .compareTo(offers.get(i + 1).getTotalAmount()) >= 0);
+        }
         assertEquals(statement.getStatementId(), offers.get(0).getStatementId());
         assertEquals(statement.getStatementId(), offers.get(1).getStatementId());
         assertEquals(statement.getStatementId(), offers.get(2).getStatementId());
@@ -106,7 +114,7 @@ public class CreateStatementServiceTests {
     }
 
     @Test
-    public void getOffers_ThrowsCalculatorServiceException_WhenCalculatorServiceReturnsStatus503(){
+    public void getOffers_ThrowsCalculatorServiceException_WhenCalculatorServiceReturnsStatus503() {
         LoanStatementRequestDto loanStatementRequestDto = LoanStatementRequestDto.builder()
                 .amount(BigDecimal.valueOf(100000))
                 .term(36)
