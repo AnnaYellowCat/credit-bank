@@ -1,9 +1,7 @@
 package com.neoflex.calculatorservice.controllers;
 
-import com.neoflex.calculatorservice.dto.CreditDto;
-import com.neoflex.calculatorservice.dto.LoanOfferDto;
-import com.neoflex.calculatorservice.dto.LoanStatementRequestDto;
-import com.neoflex.calculatorservice.dto.ScoringDataDto;
+import com.neoflex.calculatorservice.dto.*;
+import com.neoflex.calculatorservice.exceptions.LoanDeniedException;
 import com.neoflex.calculatorservice.services.CalculatorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
@@ -69,19 +66,28 @@ public class CalculatorController {
             @ApiResponse(responseCode = "500", description = "Loan denied")
     })
     @PostMapping("/calculator/calc")
-    public ResponseEntity<CreditDto> getCredit(@RequestBody ScoringDataDto scoringDataDto) {
-        log.info("Received credit calculation request for {} {}, amount: {}, term: {} months",
-                scoringDataDto.getFirstName(),
-                scoringDataDto.getLastName(),
-                scoringDataDto.getAmount().setScale(ROUNDING_SCALE, ROUNDING_MODE),
-                scoringDataDto.getTerm());
-        CreditDto credit = calculatorService.getCredit(scoringDataDto);
-        log.info("Credit calculation result - total amount: {}, term: {}, rate: {}, monthly payment: {}, payment schedule with {} elements",
-                credit.getPsk().setScale(ROUNDING_SCALE, ROUNDING_MODE),
-                credit.getTerm(),
-                credit.getRate().setScale(ROUNDING_SCALE, ROUNDING_MODE),
-                credit.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE),
-                credit.getPaymentSchedule().size());
-        return ResponseEntity.ok(credit);
+    public ResponseEntity<?> getCredit(@RequestBody ScoringDataDto scoringDataDto) {
+        try {
+            log.info("Received credit calculation request for {} {}, amount: {}, term: {} months",
+                    scoringDataDto.getFirstName(),
+                    scoringDataDto.getLastName(),
+                    scoringDataDto.getAmount().setScale(ROUNDING_SCALE, ROUNDING_MODE),
+                    scoringDataDto.getTerm());
+            CreditDto credit = calculatorService.getCredit(scoringDataDto);
+            log.info("Credit calculation result - total amount: {}, term: {}, rate: {}, monthly payment: {}, payment schedule with {} elements",
+                    credit.getPsk().setScale(ROUNDING_SCALE, ROUNDING_MODE),
+                    credit.getTerm(),
+                    credit.getRate().setScale(ROUNDING_SCALE, ROUNDING_MODE),
+                    credit.getMonthlyPayment().setScale(ROUNDING_SCALE, ROUNDING_MODE),
+                    credit.getPaymentSchedule().size());
+            return ResponseEntity.ok(credit);
+        }
+        catch (LoanDeniedException e) {
+            return ResponseEntity
+                    .status(500)
+                    .body(ErrorDto.builder()
+                            .denialReason(e.getMessage())
+                            .build());
+        }
     }
 }

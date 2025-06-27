@@ -38,7 +38,7 @@ public class ScoringDataDto {
     private Gender gender;
 
     @Schema(description = "Date of birth of client", example = "2000-01-01")
-    private LocalDate birthdate;
+    private LocalDate birthDate;
 
     @Schema(description = "Passport series of client", example = "6060")
     private String passportSeries;
@@ -53,7 +53,7 @@ public class ScoringDataDto {
             example = "Passport issuance department of the federal migration service for the saratov region")
     private String passportIssueBranch;
 
-    @Schema(description = "Gender of client",
+    @Schema(description = "Marital status of client",
             allowableValues = {"MARRIED, SINGLE, DIVORCED, WIDOW_WIDOWER"},
             example = "SINGLE")
     private MaritalStatus maritalStatus;
