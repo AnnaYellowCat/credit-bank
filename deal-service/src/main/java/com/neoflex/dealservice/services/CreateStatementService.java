@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -49,11 +50,11 @@ public class CreateStatementService {
         clientRepository.save(client);
         log.debug("Client {} {} created", client.getFirstName(), client.getLastName());
 
-        Statement statement = statementMapper.toStatement(client);
+        Statement statement = statementMapper.toStatement(client, LocalDateTime.now());
         statementRepository.save(statement);
         log.debug("Statement for client {} {} created", client.getFirstName(), client.getLastName());
 
-        List<LoanOfferDto> loanOffers = null;
+        List<LoanOfferDto> loanOffers;
         try {
             ResponseEntity<List<LoanOfferDto>> response = restTemplate.exchange(
                     urlGetOffers,
@@ -72,11 +73,9 @@ public class CreateStatementService {
         }
         if (loanOffers != null) {
             log.debug("Loan offers from calculator service received successfully");
-            for (LoanOfferDto loanOfferDto : loanOffers) {
-                loanOfferDto.setStatementId(statement.getStatementId());
-            }
-            loanOffers.sort((o1, o2) -> o2.getTotalAmount()
-                    .compareTo(o1.getTotalAmount()));
+            loanOffers.stream().sorted((o1, o2) -> o2.getTotalAmount()
+                    .compareTo(o1.getTotalAmount()))
+                    .forEach(loanOfferDto -> loanOfferDto.setStatementId(statement.getStatementId()));
             return loanOffers;
         } else {
             log.error("Failed to get loan offers from calculator service");

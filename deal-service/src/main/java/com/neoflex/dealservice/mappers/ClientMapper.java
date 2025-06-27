@@ -14,22 +14,23 @@ import com.neoflex.dealservice.entities.Client;
 
 import java.util.UUID;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", imports = UUID.class)
 public interface ClientMapper {
 
-    @Mapping(target = "clientId", ignore = true)
-    @Mapping(target = "passport", source = ".", qualifiedByName = "mapPassport")
+    @Mapping(target = "clientId", expression = "java(UUID.randomUUID())")
+    @Mapping(target = "passport", source = ".", qualifiedByName = "createPassport")
     Client toClient(LoanStatementRequestDto dto);
 
-    @Mapping(target = "gender", ignore = true)
-    @Mapping(target = "maritalStatus", ignore = true)
-    @Mapping(target = "passport", ignore = true)
+    @Mapping(target = "gender", source = "finishRegistrationRequest.gender")
+    @Mapping(target = "maritalStatus", source = "finishRegistrationRequest.maritalStatus")
+    @Mapping(target = "passport.issueBranch", source = "finishRegistrationRequest.passportIssueBranch")
+    @Mapping(target = "passport.issueDate", source = "finishRegistrationRequest.passportIssueDate")
     @Mapping(target = "dependentAmount", source = "finishRegistrationRequest.dependentAmount")
     @Mapping(target = "accountNumber", source = "finishRegistrationRequest.accountNumber")
     @Mapping(target = "employment", source = "finishRegistrationRequest.employment", qualifiedByName = "createEmployment")
-    Client updateClient(Client client, Passport passport, FinishRegistrationRequestDto finishRegistrationRequest);
+    Client updateClient(Client client, FinishRegistrationRequestDto finishRegistrationRequest);
 
-    @Named("mapPassport")
+    @Named("createPassport")
     default Passport createPassport(LoanStatementRequestDto dto) {
         return Passport.builder()
                 .passportId(UUID.randomUUID())
@@ -49,20 +50,5 @@ public interface ClientMapper {
                 .workExperienceTotal(employmentDto.getWorkExperienceTotal())
                 .workExperienceCurrent(employmentDto.getWorkExperienceCurrent())
                 .build();
-    }
-
-    @AfterMapping
-    default void setClientId(@MappingTarget Client client) {
-        client.setClientId(UUID.randomUUID());
-    }
-
-    @AfterMapping
-    default void updateEnumFieldsAnfPassport(FinishRegistrationRequestDto dto, Passport passport,
-                                             @MappingTarget Client client) {
-        client.setGender(Gender.valueOf(dto.getGender()));
-        client.setMaritalStatus(MaritalStatus.valueOf(dto.getMaritalStatus()));
-        passport.setIssueBranch(dto.getPassportIssueBranch());
-        passport.setIssueDate(dto.getPassportIssueDate());
-        client.setPassport(passport);
     }
 }

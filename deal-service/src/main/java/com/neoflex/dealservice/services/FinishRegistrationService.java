@@ -70,12 +70,11 @@ public class FinishRegistrationService {
         }
         log.debug("Statement with id {} found", statementId);
 
-        Passport passport = client.getPassport();
-        clientRepository.save(clientMapper.updateClient(client, passport, finishRegistrationRequest));
+        clientRepository.save(clientMapper.updateClient(client, finishRegistrationRequest));
         log.debug("Client {} {} updated according to info for completion of registration",
                 client.getFirstName(), client.getLastName());
 
-        CreditDto creditDto = null;
+        CreditDto creditDto;
         try {
             ResponseEntity<?> response = restTemplate.exchange(
                     urlGetCredit,
@@ -112,7 +111,7 @@ public class FinishRegistrationService {
                         error.getDenialReason());
 
                 statementRepository.save(statementMapper.updateStatement(true, statement));
-            } catch (IllegalStateException e) {
+            } catch (IllegalStateException | NullPointerException e) {
                 log.error("Failed to get credit from calculator service, status code 500");
                 throw new CalculatorServiceException("Failed to get credit from calculator service");
             }
