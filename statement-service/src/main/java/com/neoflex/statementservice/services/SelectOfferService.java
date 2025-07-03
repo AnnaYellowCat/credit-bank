@@ -44,5 +44,6 @@ public class SelectOfferService {
             log.error("Failed to send loan offer to deal service due to unexpected error: {}", e.getMessage());
             throw new DealServiceException("Failed to send loan offer to deal service due to unexpected error");
         }
+        log.debug("Loan offer sent to deal service successfully");
     }
 }
