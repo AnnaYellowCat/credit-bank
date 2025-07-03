@@ -4,7 +4,7 @@ import com.neoflex.statementservice.dto.LoanOfferDto;
 import com.neoflex.statementservice.dto.LoanStatementRequestDto;
 import com.neoflex.statementservice.exceptions.DealServiceException;
 import com.neoflex.statementservice.exceptions.StatementNotFoundException;
-import com.neoflex.statementservice.services.GetOffersService;
+import com.neoflex.statementservice.services.FetchOffersService;
 import com.neoflex.statementservice.services.SelectOfferService;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 @ActiveProfiles("test")
 public class StatementControllerTests {
     @MockitoBean
-    private GetOffersService getOffersService;
+    private FetchOffersService fetchOffersService;
 
     @MockitoBean
     private SelectOfferService selectOfferService;
@@ -62,7 +62,7 @@ public class StatementControllerTests {
         offers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(30000)).build());
         offers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(20000)).build());
         offers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(10000)).build());
-        when(getOffersService.getOffers(any(LoanStatementRequestDto.class)))
+        when(fetchOffersService.getOffers(any(LoanStatementRequestDto.class)))
                 .thenReturn(offers);
 
         List result = given()
@@ -95,7 +95,7 @@ public class StatementControllerTests {
         offers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(30000)).build());
         offers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(20000)).build());
         offers.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(10000)).build());
-        when(getOffersService.getOffers(any(LoanStatementRequestDto.class)))
+        when(fetchOffersService.getOffers(any(LoanStatementRequestDto.class)))
                 .thenReturn(offers);
 
         given()
@@ -121,7 +121,7 @@ public class StatementControllerTests {
                 .passportSeries("1234")
                 .passportNumber("123456")
                 .build();
-        when(getOffersService.getOffers(any(LoanStatementRequestDto.class)))
+        when(fetchOffersService.getOffers(any(LoanStatementRequestDto.class)))
                 .thenThrow(new DealServiceException(""));
 
         given()

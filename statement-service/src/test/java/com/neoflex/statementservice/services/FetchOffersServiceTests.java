@@ -28,9 +28,9 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @ActiveProfiles("test")
-public class GetOffersServiceTests {
+public class FetchOffersServiceTests {
     @Autowired
-    private GetOffersService getOffersService;
+    private FetchOffersService fetchOffersService;
 
     @MockitoBean
     private AgeValidator ageValidator;
@@ -39,7 +39,7 @@ public class GetOffersServiceTests {
     private RestTemplate restTemplate;
 
     @Test
-    public void getOffers_ReturnsOffers_WhenAgeIsAbove18AndDealServiceReturnsOffers() {
+    public void getOffers_ReturnsOffers_WhenAgeValidAndDealServiceReturnsOffers() {
         when(ageValidator.isAdult(any())).thenReturn(true);
         List<LoanOfferDto> loanOffersResponse = new ArrayList<>();
         loanOffersResponse.add(LoanOfferDto.builder().totalAmount(BigDecimal.valueOf(40000)).build());
@@ -54,7 +54,7 @@ public class GetOffersServiceTests {
                 any(ParameterizedTypeReference.class)
         )).thenReturn(mockResponse);
 
-        List<LoanOfferDto> offers = getOffersService.getOffers(new LoanStatementRequestDto());
+        List<LoanOfferDto> offers = fetchOffersService.getOffers(new LoanStatementRequestDto());
 
         assertEquals(4, offers.size());
         for (int i = 0; i < offers.size() - 1; i++) {
@@ -64,11 +64,11 @@ public class GetOffersServiceTests {
     }
 
     @Test
-    public void getOffers_ThrowsUnderageException_WhenAgeIsUnder18() {
+    public void getOffers_ThrowsUnderageException_WhenAgeIsNotValid() {
         when(ageValidator.isAdult(any())).thenReturn(false);
 
         assertThrows(UnderageException.class,
-                () -> getOffersService.getOffers(new LoanStatementRequestDto()));
+                () -> fetchOffersService.getOffers(new LoanStatementRequestDto()));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class GetOffersServiceTests {
                 .thenThrow(exception);
 
         assertThrows(DealServiceException.class,
-                () -> getOffersService.getOffers(new LoanStatementRequestDto()));
+                () -> fetchOffersService.getOffers(new LoanStatementRequestDto()));
     }
 
     @Test
@@ -97,7 +97,7 @@ public class GetOffersServiceTests {
                 .thenThrow(new RuntimeException());
 
         assertThrows(DealServiceException.class,
-                () -> getOffersService.getOffers(new LoanStatementRequestDto()));
+                () -> fetchOffersService.getOffers(new LoanStatementRequestDto()));
     }
 
     @Test
@@ -111,6 +111,6 @@ public class GetOffersServiceTests {
                 .thenReturn(ResponseEntity.ok(null));
 
         assertThrows(DealServiceException.class,
-                () -> getOffersService.getOffers(new LoanStatementRequestDto()));
+                () -> fetchOffersService.getOffers(new LoanStatementRequestDto()));
     }
 }

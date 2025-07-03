@@ -16,14 +16,14 @@ public class AgeValidatorTests {
     private AgeValidator ageValidator;
 
     @Test
-    public void isAdult_ReturnsTrue_WhenAgeIsAbove18() {
+    public void isAdult_ReturnsTrue_WhenAgeIsValid() {
         boolean result = ageValidator.isAdult(LocalDate.parse("2000-03-01"));
 
         assertTrue(result);
     }
 
     @Test
-    public void isAdult_ReturnsFalse_WhenAgeIsUnder18() {
+    public void isAdult_ReturnsFalse_WhenAgeIsNotValid() {
         boolean result = ageValidator.isAdult(LocalDate.parse("2020-03-01"));
 
         assertFalse(result);

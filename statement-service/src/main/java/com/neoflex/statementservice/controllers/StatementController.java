@@ -6,7 +6,7 @@ import com.neoflex.statementservice.dto.LoanStatementRequestDto;
 import com.neoflex.statementservice.exceptions.DealServiceException;
 import com.neoflex.statementservice.exceptions.StatementNotFoundException;
 import com.neoflex.statementservice.exceptions.UnderageException;
-import com.neoflex.statementservice.services.GetOffersService;
+import com.neoflex.statementservice.services.FetchOffersService;
 import com.neoflex.statementservice.services.SelectOfferService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,11 +19,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/statement")
 public class StatementController implements StatementApi {
-    private final GetOffersService getOffersService;
+    private final FetchOffersService fetchOffersService;
     private final SelectOfferService selectOfferService;
 
-    public StatementController(GetOffersService getOffersService, SelectOfferService selectOfferService) {
-        this.getOffersService = getOffersService;
+    public StatementController(FetchOffersService fetchOffersService, SelectOfferService selectOfferService) {
+        this.fetchOffersService = fetchOffersService;
         this.selectOfferService = selectOfferService;
     }
 
@@ -33,7 +33,7 @@ public class StatementController implements StatementApi {
         log.info("Received request for loan offers: loan amount {}, term {}",
                 loanStatementRequestDto.getAmount(), loanStatementRequestDto.getTerm());
         try {
-            List<LoanOfferDto> offers = getOffersService.getOffers(loanStatementRequestDto);
+            List<LoanOfferDto> offers = fetchOffersService.getOffers(loanStatementRequestDto);
             log.info("Success: loan offers with total amount {}, {}, {} and {} returned", offers.get(0).getTotalAmount(),
                     offers.get(1).getTotalAmount(), offers.get(2).getTotalAmount(), offers.get(3).getTotalAmount());
             return ResponseEntity.ok(offers);

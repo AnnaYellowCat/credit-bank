@@ -20,11 +20,11 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class GetOffersService {
+public class FetchOffersService {
     private final AgeValidator ageValidator;
     private final RestTemplate restTemplate;
 
-    public GetOffersService(AgeValidator ageValidator, RestTemplate restTemplate) {
+    public FetchOffersService(AgeValidator ageValidator, RestTemplate restTemplate) {
         this.ageValidator = ageValidator;
         this.restTemplate = restTemplate;
     }

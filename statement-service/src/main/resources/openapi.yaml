@@ -100,6 +100,15 @@ components:
     LoanStatementRequestDto:
       type: object
       description: Data for creating loan offers
+      required:
+        - amount
+        - term
+        - firstName
+        - lastName
+        - email
+        - birthDate
+        - passportSeries
+        - passportNumber
       properties:
         amount:
           type: number
@@ -149,19 +158,19 @@ components:
           pattern: "^[0-9]{6}$"
           description: Passport number of client
           example: "578430"
-      required:
-        - amount
-        - term
-        - firstName
-        - lastName
-        - email
-        - birthDate
-        - passportSeries
-        - passportNumber
 
     LoanOfferDto:
       type: object
       description: Information about loan offer
+      required:
+        - statementId
+        - requestedAmount
+        - totalAmount
+        - term
+        - monthlyPayment
+        - rate
+        - isInsuranceEnabled
+        - isSalaryClient
       properties:
         statementId:
           type: string
@@ -200,12 +209,3 @@ components:
           type: boolean
           description: Information about whether the client is a salary client
           example: false
-      required:
-        - statementId
-        - requestedAmount
-        - totalAmount
-        - term
-        - monthlyPayment
-        - rate
-        - isInsuranceEnabled
-        - isSalaryClient
