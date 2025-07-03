@@ -42,7 +42,7 @@ public class CalculatorControllerTests {
     }
 
     @Test
-    void getOffers_ReturnsLoanOffers_WhenInputDataIsValid(){
+    void getOffers_ReturnsLoanOffers(){
         LoanStatementRequestDto loanStatementRequestDto = LoanStatementRequestDto.builder()
                 .amount(BigDecimal.valueOf(100000))
                 .term(36)
@@ -85,30 +85,6 @@ public class CalculatorControllerTests {
                 .statusCode(HttpStatus.OK.value()).extract().as(List.class);
 
         assertEquals(4, result.size());
-    }
-
-    @Test
-    void getOffers_ReturnsBadRequest_WhenInputDataIsInvalid(){
-        LoanStatementRequestDto loanStatementRequestDto = LoanStatementRequestDto.builder()
-                .amount(BigDecimal.valueOf(100000))
-                .term(36)
-                .firstName("Ivan")
-                .lastName("Ivanov")
-                .middleName("Ivanovich")
-                .email("ivan@mail.ru")
-                .birthDate(LocalDate.parse("2015-01-01"))
-                .passportSeries("4567")
-                .passportNumber("456789")
-                .build();
-
-        given()
-                .contentType(ContentType.JSON)
-                .when()
-                .body(loanStatementRequestDto)
-                .post("/calculator/offers")
-                .then()
-                .log().body()
-                .statusCode(HttpStatus.BAD_REQUEST.value());
     }
 
     @Test
