@@ -1,0 +1,211 @@
+openapi: 3.0.1
+info:
+  title: Statement Service API
+  version: 1.0.0
+  description: API for getting offers and choosing one of the offers
+
+servers:
+  - url: http://localhost:8082
+    description: Local server
+
+paths:
+  /statement:
+    post:
+      tags:
+        - Statement
+      operationId: getOffers
+      summary: Getting loan offers
+      description: Gets loan offers with all possible loan terms
+      requestBody:
+        description: Data for getting loan offers
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanStatementRequestDto'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoanOfferDto'
+              examples:
+                fourOffers:
+                  summary: Example with 4 loan offers
+                  value:
+                    - statementId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      requestedAmount: 100000
+                      totalAmount: 150000
+                      term: 36
+                      monthlyPayment: 10000
+                      rate: 20
+                      isInsuranceEnabled: false
+                      isSalaryClient: false
+                    - statementId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      requestedAmount: 100000
+                      totalAmount: 140000
+                      term: 36
+                      monthlyPayment: 8000
+                      rate: 16
+                      isInsuranceEnabled: true
+                      isSalaryClient: false
+                    - statementId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      requestedAmount: 100000
+                      totalAmount: 130000
+                      term: 36
+                      monthlyPayment: 6000
+                      rate: 14
+                      isInsuranceEnabled: false
+                      isSalaryClient: true
+                    - statementId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      requestedAmount: 100000
+                      totalAmount: 120000
+                      term: 36
+                      monthlyPayment: 4000
+                      rate: 12
+                      isInsuranceEnabled: false
+                      isSalaryClient: false
+        '400':
+          description: Data did not pass prescoring
+        '424':
+          description: Failed to get info from deal service
+
+  /statement/offer:
+    post:
+      tags:
+        - Statement
+      operationId: selectOffer
+      summary: Choosing one of the offers
+      description: Accepts one offer
+      requestBody:
+        description: Data for choosing one of the loan offer
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanOfferDto'
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Statement not found
+        '424':
+          description: Failed to get info from deal service
+
+components:
+  schemas:
+    LoanStatementRequestDto:
+      type: object
+      description: Data for creating loan offers
+      required:
+        - amount
+        - term
+        - firstName
+        - lastName
+        - email
+        - birthDate
+        - passportSeries
+        - passportNumber
+      properties:
+        amount:
+          type: number
+          format: bigdecimal
+          minimum: 10000
+          maximum: 100000000
+          description: Requested loan amount
+          example: 100000
+        term:
+          type: integer
+          minimum: 3
+          maximum: 360
+          description: Loan term, number of months
+          example: 36
+        firstName:
+          type: string
+          pattern: "^[a-zA-Zа-яёА-ЯЁ-]{1,60}$"
+          description: First name of client
+          example: "Ivan"
+        lastName:
+          type: string
+          pattern: "^[a-zA-Zа-яёА-ЯЁ-]{1,60}$"
+          description: Last name of client
+          example: "Ivanov"
+        middleName:
+          type: string
+          pattern: "^$|^[a-zA-Zа-яёА-ЯЁ-]{1,60}$"
+          description: Middle name of client
+          example: "Ivanovich"
+        email:
+          type: string
+          pattern: "^[a-z0-9A-Z_!#$%&'*+/=?`{|}~^.-]+@[a-z0-9A-Z.-]+$"
+          description: Email of client
+          example: "ivan@mail.ru"
+        birthDate:
+          type: string
+          format: date
+          description: Date of birth of client
+          example: "2000-01-01"
+        passportSeries:
+          type: string
+          pattern: "^[0-9]{4}$"
+          description: Passport series of client
+          example: "4567"
+        passportNumber:
+          type: string
+          pattern: "^[0-9]{6}$"
+          description: Passport number of client
+          example: "578430"
+
+    LoanOfferDto:
+      type: object
+      description: Information about loan offer
+      required:
+        - statementId
+        - requestedAmount
+        - totalAmount
+        - term
+        - monthlyPayment
+        - rate
+        - isInsuranceEnabled
+        - isSalaryClient
+      properties:
+        statementId:
+          type: string
+          format: uuid
+          description: Unique id of loan statement
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        requestedAmount:
+          type: number
+          format: bigdecimal
+          description: Requested loan amount
+          example: 100000
+        totalAmount:
+          type: number
+          format: bigdecimal
+          description: Loan amount including interest and insurance costs
+          example: 130000
+        term:
+          type: integer
+          description: Loan term, number of months
+          example: 36
+        monthlyPayment:
+          type: number
+          format: bigdecimal
+          description: The amount of payment for every month
+          example: 10000
+        rate:
+          type: number
+          format: bigdecimal
+          description: Loan rate calculated depending on parameters, percentages
+          example: 22
+        isInsuranceEnabled:
+          type: boolean
+          description: Information about whether insurance is included
+          example: true
+        isSalaryClient:
+          type: boolean
+          description: Information about whether the client is a salary client
+          example: false

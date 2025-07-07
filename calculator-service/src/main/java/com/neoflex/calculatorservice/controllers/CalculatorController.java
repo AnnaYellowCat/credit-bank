@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,11 +36,10 @@ public class CalculatorController {
                     "by info from LoanStatementRequestDto"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Loan offers successfully generated"),
-            @ApiResponse(responseCode = "400", description = "Invalid data")
+            @ApiResponse(responseCode = "200", description = "Loan offers successfully generated")
     })
     @PostMapping("/calculator/offers")
-    public ResponseEntity<List<LoanOfferDto>> getOffers(@Valid @RequestBody LoanStatementRequestDto loanStatementRequestDto) {
+    public ResponseEntity<List<LoanOfferDto>> getOffers(@RequestBody LoanStatementRequestDto loanStatementRequestDto) {
         log.info("Loan offers request for {} {}, amount: {}, term: {} months",
                 loanStatementRequestDto.getFirstName(),
                 loanStatementRequestDto.getLastName(),
