@@ -1,4 +1,4 @@
-package com.neoflex.dealservice.dto;
+package com.neoflex.dossierservice.dto;
 
 import lombok.Data;
 

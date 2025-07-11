@@ -20,7 +20,6 @@ public interface StatementMapper {
     @Mapping(target = "statementId", expression = "java(UUID.randomUUID())")
     @Mapping(target = "status", constant = "PREAPPROVAL")
     @Mapping(target = "creationDate", source = "creationDate")
-    @Mapping(target = "sesCode", expression = "java(UUID.randomUUID().toString())")
     @Mapping(target = "statusHistory", source = "creationDate", qualifiedByName = "createStatusHistory")
     Statement toStatement(Client client, LocalDateTime creationDate);
 

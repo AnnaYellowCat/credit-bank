@@ -1,0 +1,46 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: dossier-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: my-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+
+  mail:
+    host: smtp.mail.ru
+    port: 465
+    username: "anna.gudkova.rus@mail.ru"
+    password: "FALsEDYVAxiqWfqyyFBD"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: true
+
+app:
+  gateway:
+    uri: http://localhost:8081
+  deal:
+    credit: /deal/credit/
+    document:
+      base: /deal/document/
+      sign: /code?code=
+
+document:
+  title: "Детали кредита.txt"
+  margin:
+    big: 15
+    small: 5
+  format:
+    number: "#,##0.00"
+    date: "dd.MM.yyyy"

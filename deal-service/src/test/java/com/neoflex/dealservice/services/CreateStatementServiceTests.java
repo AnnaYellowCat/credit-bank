@@ -98,7 +98,6 @@ public class CreateStatementServiceTests {
         assertEquals(client.getClientId(), statement.getClient().getClientId());
         assertEquals(PREAPPROVAL, statement.getStatus());
         assertNotNull(statement.getCreationDate());
-        assertNotNull(statement.getSesCode());
         StatementStatusHistoryDto statusHistoryElement = statement.getStatusHistory().getLast();
         assertEquals(PREAPPROVAL, statusHistoryElement.getStatus());
         assertEquals(statement.getCreationDate(), statusHistoryElement.getTime());

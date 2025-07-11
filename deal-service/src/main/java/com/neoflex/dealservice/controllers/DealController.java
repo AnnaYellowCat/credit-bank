@@ -1,14 +1,12 @@
 package com.neoflex.dealservice.controllers;
 
 import com.neoflex.dealservice.api.DealApi;
+import com.neoflex.dealservice.dto.CreditDto;
 import com.neoflex.dealservice.dto.FinishRegistrationRequestDto;
 import com.neoflex.dealservice.dto.LoanOfferDto;
 import com.neoflex.dealservice.dto.LoanStatementRequestDto;
-import com.neoflex.dealservice.exceptions.CalculatorServiceException;
-import com.neoflex.dealservice.exceptions.StatementNotFoundException;
-import com.neoflex.dealservice.services.FinishRegistrationService;
-import com.neoflex.dealservice.services.CreateStatementService;
-import com.neoflex.dealservice.services.SelectOfferService;
+import com.neoflex.dealservice.exceptions.*;
+import com.neoflex.dealservice.services.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +21,21 @@ public class DealController implements DealApi {
     private final CreateStatementService createStatementService;
     private final SelectOfferService selectOfferService;
     private final FinishRegistrationService finishRegistrationService;
+    private final SendDocumentsService sendDocumentsService;
+    private final SendCodeService sendCodeService;
+    private final IssueCreditService issueCreditService;
+    private final FetchCreditInfoService fetchCreditInfoService;
 
     public DealController(CreateStatementService createStatementService, FinishRegistrationService finishRegistrationService,
-                          SelectOfferService selectOfferService) {
+                          SelectOfferService selectOfferService, SendDocumentsService sendDocumentsService,
+                          SendCodeService sendCodeService, IssueCreditService issueCreditService, FetchCreditInfoService fetchCreditInfoService) {
         this.createStatementService = createStatementService;
         this.finishRegistrationService = finishRegistrationService;
         this.selectOfferService = selectOfferService;
+        this.sendDocumentsService = sendDocumentsService;
+        this.sendCodeService = sendCodeService;
+        this.issueCreditService = issueCreditService;
+        this.fetchCreditInfoService = fetchCreditInfoService;
     }
 
     @Override
@@ -58,6 +65,8 @@ public class DealController implements DealApi {
             return ResponseEntity.ok().build();
         } catch (StatementNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (DocumentIsAlreadySignedException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 
@@ -72,8 +81,71 @@ public class DealController implements DealApi {
             return ResponseEntity.ok().build();
         } catch (StatementNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (DocumentIsAlreadySignedException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (CalculatorServiceException e) {
             return ResponseEntity.status(HttpStatus.FAILED_DEPENDENCY).build();
+        }
+    }
+
+
+    @Override
+    @PostMapping("/document/{statementId}/send")
+    public ResponseEntity<Void> sendDocumentsRequest(@PathVariable String statementId) {
+        log.info("Received request for creation documents for statement with id {}", statementId);
+        try {
+            sendDocumentsService.sendDocsCreationRequest(statementId);
+            log.info("Success: request for creation documents for statement with id {} sent", statementId);
+            return ResponseEntity.ok().build();
+        } catch (StatementNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (DocumentIsAlreadySignedException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+    }
+
+    @Override
+    @PostMapping("/document/{statementId}/sign")
+    public ResponseEntity<Void> signDocumentsRequest(@PathVariable String statementId) {
+        log.info("Received request for creation code for statement with id {}", statementId);
+        try {
+            sendCodeService.sendCodeCreationRequest(statementId);
+            log.info("Success: request for creation code for statement with id {} sent", statementId);
+            return ResponseEntity.ok().build();
+        } catch (StatementNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (DocumentIsAlreadySignedException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+    }
+
+    @Override
+    @PostMapping("/document/{statementId}/code")
+    public ResponseEntity<Void> signDocuments(@PathVariable String statementId, @RequestParam String code) {
+        log.info("Received request for signing documents for statement with id {}", statementId);
+        try {
+            issueCreditService.issueCredit(statementId, code);
+            log.info("Success: documents for statement with id {} signed", statementId);
+            return ResponseEntity.ok().build();
+        } catch (StatementNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (DocumentIsAlreadySignedException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (InvalidCodeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    @Override
+    @GetMapping("/credit/{statementId}")
+    public ResponseEntity<CreditDto> getCredit(@PathVariable String statementId) {
+        log.info("Received request for getting credit for statement with id {}", statementId);
+        try {
+            CreditDto creditDto = fetchCreditInfoService.getCreditInfo(statementId);
+            log.info("Success: credit for statement with id {} got", statementId);
+            return ResponseEntity.ok(creditDto);
+        } catch (StatementNotFoundException | CreditNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 }
