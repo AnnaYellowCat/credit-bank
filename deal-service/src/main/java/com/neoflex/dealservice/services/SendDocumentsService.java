@@ -9,6 +9,7 @@ import com.neoflex.dealservice.repositories.StatementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -23,6 +24,9 @@ public class SendDocumentsService extends StatementService {
         super(statementRepository, kafkaProducer);
     }
 
+    @Value("${topic.send-documents}")
+    private String sendDocsTopic;
+
     @Transactional
     public void sendDocsCreationRequest(String statementId) {
         UUID id = UUID.fromString(statementId);
@@ -33,7 +37,8 @@ public class SendDocumentsService extends StatementService {
                 log.error("Document for statement with id {} is already signed", statementId);
                 throw new DocumentIsAlreadySignedException("Document is already signed");
             }
-            updateStatementStatus(statement, PREPARE_DOCUMENTS);
+            statement.setStatus(PREPARE_DOCUMENTS);
+            statement.getStatusHistory().add(getStatusHistoryElement(PREPARE_DOCUMENTS));
             log.debug("Statement with id {} found", statementId);
             statementRepository.save(statement);
             log.debug("Statement with id {} updated, status: {}", statementId, statement.getStatus());
@@ -41,6 +46,6 @@ public class SendDocumentsService extends StatementService {
             log.error("Statement with id {} not found", statementId);
             throw new StatementNotFoundException("Statement not found");
         }
-        sendKafkaMessage(id, statement.getClient().getEmail(), SEND_DOCUMENTS, "");
+        sendKafkaMessage(id, statement.getClient().getEmail(), SEND_DOCUMENTS, sendDocsTopic);
     }
 }

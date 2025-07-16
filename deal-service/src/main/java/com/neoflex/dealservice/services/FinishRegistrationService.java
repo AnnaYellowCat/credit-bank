@@ -10,7 +10,6 @@ import com.neoflex.dealservice.exceptions.StatementNotFoundException;
 import com.neoflex.dealservice.mappers.ClientMapper;
 import com.neoflex.dealservice.mappers.CreditMapper;
 import com.neoflex.dealservice.mappers.ScoringDataDtoMapper;
-import com.neoflex.dealservice.mappers.StatementMapper;
 import com.neoflex.dealservice.producers.KafkaProducer;
 import com.neoflex.dealservice.repositories.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -28,13 +27,12 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.UUID;
 
-import static com.neoflex.dealservice.enums.ApplicationStatus.DOCUMENT_SIGNED;
+import static com.neoflex.dealservice.enums.ApplicationStatus.*;
 import static com.neoflex.dealservice.enums.EmailMessageTheme.*;
 
 @Slf4j
 @Service
-public class FinishRegistrationService {
-    private final StatementRepository statementRepository;
+public class FinishRegistrationService extends StatementService {
     private final ClientRepository clientRepository;
     private final CreditRepository creditRepository;
     private final RestTemplate restTemplate;
@@ -42,14 +40,19 @@ public class FinishRegistrationService {
     private final ScoringDataDtoMapper scoringDataDtoMapper;
     private final ClientMapper clientMapper;
     private final CreditMapper creditMapper;
-    private final StatementMapper statementMapper;
-    private final KafkaProducer kafkaProducer;
+
+    @Value("${app.calculator.credit}")
+    private String urlGetCredit;
+    @Value("${topic.create-documents}")
+    private String createDocsTopic;
+    @Value("${topic.statement-denied}")
+    private String statementDeniedTopic;
 
     public FinishRegistrationService(StatementRepository statementRepository, ClientRepository clientRepository,
                                      CreditRepository creditRepository, RestTemplate restTemplate, ObjectMapper objectMapper,
-                                     ScoringDataDtoMapper scoringDataDtoMapper, ClientMapper clientMapper, CreditMapper creditMapper,
-                                     StatementMapper statementMapper, KafkaProducer kafkaProducer) {
-        this.statementRepository = statementRepository;
+                                     ScoringDataDtoMapper scoringDataDtoMapper, ClientMapper clientMapper,
+                                     CreditMapper creditMapper, KafkaProducer kafkaProducer) {
+        super(statementRepository, kafkaProducer);
         this.clientRepository = clientRepository;
         this.creditRepository = creditRepository;
         this.restTemplate = restTemplate;
@@ -57,12 +60,7 @@ public class FinishRegistrationService {
         this.scoringDataDtoMapper = scoringDataDtoMapper;
         this.clientMapper = clientMapper;
         this.creditMapper = creditMapper;
-        this.statementMapper = statementMapper;
-        this.kafkaProducer = kafkaProducer;
     }
-
-    @Value("${app.calculator.credit}")
-    private String urlGetCredit;
 
     @Transactional
     public void finishRegistration(FinishRegistrationRequestDto finishRegistrationRequest, String statementId) {
@@ -111,10 +109,12 @@ public class FinishRegistrationService {
         log.debug("Credit with amount {}, psk {} rate {} and term {} saved",
                 credit.getAmount(), credit.getPsk(), credit.getRate(), credit.getTerm());
 
-        statementRepository.save(statementMapper.updateStatement(false, statement));
+        statement.setStatus(CC_APPROVED);
+        statement.getStatusHistory().add(getStatusHistoryElement(CC_APPROVED));
+        statementRepository.save(statement);
         log.debug("Statement with id {} updated and saved, status: {}", statementId, statement.getStatus());
 
-        sendKafkaMessage(statement.getStatementId(), statement.getClient().getEmail(), false, "");
+        sendKafkaMessage(statement.getStatementId(), statement.getClient().getEmail(), CREATE_DOCUMENTS, createDocsTopic);
     }
 
     private void handleHttpServerErrorException(HttpServerErrorException exception, Statement statement) {
@@ -125,10 +125,13 @@ public class FinishRegistrationService {
                 log.debug("Credit for client {} {} denied, reason: {}", client.getFirstName(), client.getLastName(),
                         error.getDenialReason());
 
-                statementRepository.save(statementMapper.updateStatement(true, statement));
+                statement.setStatus(CC_DENIED);
+                statement.getStatusHistory().add(getStatusHistoryElement(CC_DENIED));
+                statementRepository.save(statement);
                 log.debug("Statement with id {} updated, status: {}", statement.getStatementId(), statement.getStatus());
 
-                sendKafkaMessage(statement.getStatementId(), statement.getClient().getEmail(), true, error.getDenialReason());
+                sendKafkaMessage(statement.getStatementId(), statement.getClient().getEmail(), STATEMENT_DENIED,
+                        error.getDenialReason(), statementDeniedTopic);
             } catch (IllegalStateException | NullPointerException e) {
                 log.error("Failed to get credit from calculator service, status code 500");
                 throw new CalculatorServiceException("Failed to get credit from calculator service");
@@ -137,19 +140,5 @@ public class FinishRegistrationService {
             log.error("Failed to get credit from calculator service, status code {}", exception.getStatusCode());
             throw new CalculatorServiceException("Failed to get credit from calculator service");
         }
-    }
-
-    private void sendKafkaMessage(UUID statementId, String clientEmail, Boolean isDenied, String denialReason) {
-        EmailMessage emailMessage = EmailMessage.builder()
-                .address(clientEmail)
-                .statementId(statementId)
-                .text(denialReason)
-                .build();
-        if (isDenied) {
-            emailMessage.setTheme(STATEMENT_DENIED);
-        } else {
-            emailMessage.setTheme(CREATE_DOCUMENTS);
-        }
-        kafkaProducer.sendMessage(emailMessage);
     }
 }

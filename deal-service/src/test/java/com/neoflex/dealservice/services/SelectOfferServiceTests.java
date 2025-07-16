@@ -62,7 +62,7 @@ public class SelectOfferServiceTests {
                 .build());
         when(statementRepository.save(any(Statement.class))).thenAnswer(invocation -> invocation.getArgument(0));
         ArgumentCaptor<Statement> statementCaptor = ArgumentCaptor.forClass(Statement.class);
-        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class));
+        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class), anyString());
 
         selectOfferService.selectOffer(offer);
 

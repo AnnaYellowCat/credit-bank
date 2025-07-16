@@ -7,6 +7,7 @@ import com.neoflex.dealservice.dto.LoanOfferDto;
 import com.neoflex.dealservice.dto.LoanStatementRequestDto;
 import com.neoflex.dealservice.exceptions.*;
 import com.neoflex.dealservice.services.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/deal")
+@RequiredArgsConstructor
 public class DealController implements DealApi {
     private final CreateStatementService createStatementService;
     private final SelectOfferService selectOfferService;
@@ -25,18 +27,6 @@ public class DealController implements DealApi {
     private final SendCodeService sendCodeService;
     private final IssueCreditService issueCreditService;
     private final FetchCreditInfoService fetchCreditInfoService;
-
-    public DealController(CreateStatementService createStatementService, FinishRegistrationService finishRegistrationService,
-                          SelectOfferService selectOfferService, SendDocumentsService sendDocumentsService,
-                          SendCodeService sendCodeService, IssueCreditService issueCreditService, FetchCreditInfoService fetchCreditInfoService) {
-        this.createStatementService = createStatementService;
-        this.finishRegistrationService = finishRegistrationService;
-        this.selectOfferService = selectOfferService;
-        this.sendDocumentsService = sendDocumentsService;
-        this.sendCodeService = sendCodeService;
-        this.issueCreditService = issueCreditService;
-        this.fetchCreditInfoService = fetchCreditInfoService;
-    }
 
     @Override
     @PostMapping("/statement")

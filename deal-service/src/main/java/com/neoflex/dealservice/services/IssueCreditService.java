@@ -13,12 +13,13 @@ import com.neoflex.dealservice.repositories.StatementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static com.neoflex.dealservice.enums.ApplicationStatus.DOCUMENT_SIGNED;
+import static com.neoflex.dealservice.enums.ApplicationStatus.*;
 import static com.neoflex.dealservice.enums.CreditStatus.ISSUED;
 
 @Slf4j
@@ -32,6 +33,9 @@ public class IssueCreditService extends StatementService {
         this.creditRepository = creditRepository;
     }
 
+    @Value("${topic.credit-issued}")
+    private String creditIssuedTopic;
+
     @Transactional
     public void issueCredit(String statementId, String code) {
         UUID id = UUID.fromString(statementId);
@@ -43,7 +47,8 @@ public class IssueCreditService extends StatementService {
                 throw new DocumentIsAlreadySignedException("Document is already signed");
             }
             if (statement.getSesCode().equals(code)) {
-                updateStatementStatus(statement, DOCUMENT_SIGNED);
+                statement.setStatus(DOCUMENT_SIGNED);
+                statement.getStatusHistory().add(getStatusHistoryElement(DOCUMENT_SIGNED));
             } else {
                 log.error("Code {} for statement with id {} is incorrect", code, statementId);
                 throw new InvalidCodeException("Code is incorrect");
@@ -56,14 +61,14 @@ public class IssueCreditService extends StatementService {
             log.error("Statement with id {} not found", statementId);
             throw new StatementNotFoundException("Statement not found");
         }
-        sendKafkaMessage(id, statement.getClient().getEmail(), EmailMessageTheme.CREDIT_ISSUED, "");
-
-        updateStatementStatus(statement, ApplicationStatus.CREDIT_ISSUED);
+        statement.setStatus(CREDIT_ISSUED);
+        statement.getStatusHistory().add(getStatusHistoryElement(ApplicationStatus.CREDIT_ISSUED));
         log.debug("Statement with id {} updated, status: {}", statementId, statement.getStatus());
 
         Credit credit = statement.getCredit();
         credit.setCreditStatus(ISSUED);
         creditRepository.save(credit);
         log.debug("Credit for statement with id {} updated, status: {}", statementId, credit.getCreditStatus());
+        sendKafkaMessage(id, statement.getClient().getEmail(), EmailMessageTheme.CREDIT_ISSUED, creditIssuedTopic);
     }
 }

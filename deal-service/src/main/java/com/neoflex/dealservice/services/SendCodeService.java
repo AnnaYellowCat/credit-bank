@@ -26,6 +26,8 @@ public class SendCodeService extends StatementService {
 
     @Value("${code.length}")
     private int codeLength;
+    @Value("${topic.send-ses}")
+    private String sendSesTopic;
 
     @Transactional
     public void sendCodeCreationRequest(String statementId) {
@@ -40,7 +42,8 @@ public class SendCodeService extends StatementService {
                 log.error("Document for statement with id {} is already signed", statementId);
                 throw new DocumentIsAlreadySignedException("Document is already signed");
             }
-            updateStatementStatus(statement, DOCUMENT_CREATED);
+            statement.setStatus(DOCUMENT_CREATED);
+            statement.getStatusHistory().add(getStatusHistoryElement(DOCUMENT_CREATED));
             statement.setSesCode(sesCode);
             log.debug("Statement with id {} found", statementId);
             statementRepository.save(statement);
@@ -49,6 +52,6 @@ public class SendCodeService extends StatementService {
             log.error("Statement with id {} not found", statementId);
             throw new StatementNotFoundException("Statement not found");
         }
-        sendKafkaMessage(id, statement.getClient().getEmail(), SEND_SES, sesCode);
+        sendKafkaMessage(id, statement.getClient().getEmail(), SEND_SES, sesCode, sendSesTopic);
     }
 }

@@ -32,3 +32,11 @@ app:
 
 code:
   length: 6
+
+topic:
+  finish-registration: finish-registration
+  create-documents: create-documents
+  send-documents: send-documents
+  send-ses: send-ses
+  credit-issued: credit-issued
+  statement-denied: statement-denied

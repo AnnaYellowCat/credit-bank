@@ -3,17 +3,18 @@ package com.neoflex.dossierservice.sevices;
 import com.neoflex.dossierservice.dto.CreditDto;
 import com.neoflex.dossierservice.dto.EmailMessage;
 import com.neoflex.dossierservice.dto.PaymentScheduleElementDto;
-import com.neoflex.dossierservice.enums.EmailMessageTheme;
 import com.neoflex.dossierservice.exceptions.DealServiceException;
 import com.neoflex.dossierservice.exceptions.EmailMessageException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -23,19 +24,14 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
-
-import static com.neoflex.dossierservice.enums.EmailMessageTheme.*;
+import java.util.Arrays;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class EmailService {
     private final JavaMailSender mailSender;
     private final RestTemplate restTemplate;
-
-    public EmailService(JavaMailSender mailSender, RestTemplate restTemplate) {
-        this.mailSender = mailSender;
-        this.restTemplate = restTemplate;
-    }
 
     @Value("${spring.mail.username}")
     private String senderName;
@@ -58,50 +54,67 @@ public class EmailService {
     @Value("${document.margin.big}")
     private int bigMarginSize;
 
-    public void sendEmailMessage(EmailMessage messageInfo){
-        try{
-            MimeMessage emailMessage = mailSender.createMimeMessage();
-            emailMessage.setFrom(senderName);
-            MimeMessageHelper messageHelper = new MimeMessageHelper(emailMessage, true);
-            messageHelper.setTo(messageInfo.getAddress());
+    public SimpleMailMessage getFinishRegMessage(EmailMessage messageInfo) {
+        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
+        resultMessage.setSubject("Завершение оформления кредита");
+        resultMessage.setText("Завершите оформление кредита");
+        return resultMessage;
+    }
 
-            EmailMessageTheme theme = messageInfo.getTheme();
-            if (theme.equals(FINISH_REGISTRATION)) {
-                emailMessage.setSubject("Завершение оформления кредита");
-                emailMessage.setText("Завершите оформление кредита");
-            }
-            if (theme.equals(CREATE_DOCUMENTS)) {
-                emailMessage.setSubject("Оформление документов для кредита");
-                emailMessage.setText("Перейти к оформлению документов");
-            }
-            if (theme.equals(SEND_DOCUMENTS)) {
-                ByteArrayResource document = generateDocument(messageInfo.getStatementId().toString());
-                log.debug("Document with credit details for {} generated", messageInfo.getAddress());
-                emailMessage.setSubject("Формирование документов для кредита завершено");
-                emailMessage.setText("Ваши документы прикреплены к этому письму");
-                messageHelper.addAttachment(documentTitle, document);
-            }
-            if (theme.equals(SEND_SES)) {
-                emailMessage.setSubject("Подписание документов для кредита");
-                emailMessage.setText("Ваш код: " + messageInfo.getText() +
-                        ". Ссылка для подписания документов: " +
-                        gatewayUri + baseDocumentUrl + messageInfo.getStatementId() +
-                        signDocumentUrl + messageInfo.getText());
-            }
-            if (theme.equals(CREDIT_ISSUED)) {
-                emailMessage.setSubject("Оформление кредита завершено");
-                emailMessage.setText("Кредит успешно оформлен");
-            }
-            if (theme.equals(STATEMENT_DENIED)) {
-                emailMessage.setSubject("Отказ кредита");
-                emailMessage.setText("К сожалению, вам отказано в кредите. Причина: " + messageInfo.getText());
-            }
-            mailSender.send(emailMessage);
-            log.debug("Email with subject {} sent successfully to {}", emailMessage.getSubject(), messageInfo.getAddress());
+    public SimpleMailMessage getDocsMessage(EmailMessage messageInfo) {
+        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
+        resultMessage.setSubject("Оформление документов для кредита");
+        resultMessage.setText("Перейти к оформлению документов");
+        return resultMessage;
+    }
+
+    public MimeMessage getSendDocsMessage(EmailMessage messageInfo) {
+        try {
+            MimeMessage resultMessage = mailSender.createMimeMessage();
+            resultMessage.setFrom(senderName);
+            MimeMessageHelper messageHelper = new MimeMessageHelper(resultMessage, true);
+            messageHelper.setTo(messageInfo.getAddress());
+            ByteArrayResource document = generateDocument(messageInfo.getStatementId().toString());
+            log.debug("Document with credit details for {} generated", messageInfo.getAddress());
+            resultMessage.setSubject("Формирование документов для кредита завершено");
+            resultMessage.setText("Ваши документы прикреплены к этому письму");
+            messageHelper.addAttachment(documentTitle, document);
+            return resultMessage;
         } catch (MessagingException e) {
-            log.error("Failed to send email", e);
-            throw new EmailMessageException("Failed to send email");
+            log.error("Failed to create email", e);
+            throw new EmailMessageException("Failed to create email");
         }
+    }
+
+    public SimpleMailMessage getSendSesMessage(EmailMessage messageInfo) {
+        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
+        resultMessage.setSubject("Подписание документов для кредита");
+        resultMessage.setText("Ваш код: " + messageInfo.getText() +
+                ". Ссылка для подписания документов: " +
+                gatewayUri + baseDocumentUrl + messageInfo.getStatementId() +
+                signDocumentUrl + messageInfo.getText());
+        return resultMessage;
+    }
+
+    public SimpleMailMessage getCreditIssuedMessage(EmailMessage messageInfo) {
+        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
+        resultMessage.setSubject("Оформление кредита завершено");
+        resultMessage.setText("Кредит успешно оформлен");
+        return resultMessage;
+    }
+
+    public SimpleMailMessage getStatementDeniedMessage(EmailMessage messageInfo) {
+        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
+        resultMessage.setSubject("Отказ кредита");
+        resultMessage.setText("К сожалению, вам отказано в кредите. Причина: " + messageInfo.getText());
+        return resultMessage;
+    }
+
+    private SimpleMailMessage createSimpleMailMessage(String address) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(senderName);
+        message.setTo(address);
+        return message;
     }
 
     private ByteArrayResource generateDocument(String statementId) {
@@ -171,5 +184,21 @@ public class EmailService {
 
     private String addSpaces(String s, int length) {
         return s + " ".repeat(length - s.length());
+    }
+
+    public void sendEmailMessage(SimpleMailMessage message) {
+        mailSender.send(message);
+        log.debug("Email with subject {} sent successfully to {}", message.getSubject(), message.getTo());
+    }
+
+    public void sendEmailMessage(MimeMessage message) {
+        try {
+            mailSender.send(message);
+            log.debug("Email with subject {} sent successfully to {}", message.getSubject(),
+                    Arrays.stream(message.getAllRecipients()).findAny());
+        } catch (MessagingException e) {
+            log.error("Failed to send email", e);
+            throw new EmailMessageException("Failed to send email");
+        }
     }
 }

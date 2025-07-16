@@ -8,6 +8,7 @@ import com.neoflex.dealservice.exceptions.StatementNotFoundException;
 import com.neoflex.dealservice.mappers.CreditDtoMapper;
 import com.neoflex.dealservice.repositories.StatementRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -15,14 +16,10 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FetchCreditInfoService {
     private final StatementRepository statementRepository;
     private final CreditDtoMapper creditDtoMapper;
-
-    public FetchCreditInfoService(StatementRepository statementRepository, CreditDtoMapper creditDtoMapper) {
-        this.statementRepository = statementRepository;
-        this.creditDtoMapper = creditDtoMapper;
-    }
 
     public CreditDto getCreditInfo(String statementId) {
         Statement statement = statementRepository.getReferenceById(UUID.fromString(statementId));

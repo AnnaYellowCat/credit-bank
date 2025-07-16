@@ -10,6 +10,7 @@ import com.neoflex.dealservice.repositories.StatementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -19,10 +20,13 @@ import static com.neoflex.dealservice.enums.EmailMessageTheme.FINISH_REGISTRATIO
 
 @Slf4j
 @Service
-public class SelectOfferService extends StatementService{
+public class SelectOfferService extends StatementService {
     public SelectOfferService(StatementRepository statementRepository, KafkaProducer kafkaProducer) {
         super(statementRepository, kafkaProducer);
     }
+
+    @Value("${topic.finish-registration}")
+    private String finishRegTopic;
 
     @Transactional
     public void selectOffer(LoanOfferDto offer) {
@@ -36,13 +40,14 @@ public class SelectOfferService extends StatementService{
             }
             statement.setAppliedOffer(offer);
             log.debug("Statement with id {} found", statementId);
-            updateStatementStatus(statement, APPROVED);
+            statement.setStatus(APPROVED);
+            statement.getStatusHistory().add(getStatusHistoryElement(APPROVED));
             statementRepository.save(statement);
             log.debug("Statement with id {} updated, status: {}", statementId, statement.getStatus());
         } catch (EntityNotFoundException | NullPointerException e) {
             log.error("Statement with id {} not found", statementId);
             throw new StatementNotFoundException("Statement not found");
         }
-        sendKafkaMessage(statementId, statement.getClient().getEmail(), FINISH_REGISTRATION, "");
+        sendKafkaMessage(statementId, statement.getClient().getEmail(), FINISH_REGISTRATION, finishRegTopic);
     }
 }

@@ -124,7 +124,7 @@ public class FinishRegistrationServiceTests {
         )).thenReturn(mockResponse);
         when(creditRepository.save(any(Credit.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(statementRepository.save(any(Statement.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class));
+        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class), anyString());
 
         finishRegistrationService.finishRegistration(finishRegistrationRequestDto, String.valueOf(statementId));
 
@@ -229,7 +229,7 @@ public class FinishRegistrationServiceTests {
                 any(ParameterizedTypeReference.class)))
                 .thenThrow(exception);
         when(statementRepository.save(any(Statement.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class));
+        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class), anyString());
 
         finishRegistrationService.finishRegistration(finishRegistrationRequestDto, String.valueOf(statementId));
 

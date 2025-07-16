@@ -12,12 +12,14 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.neoflex.dossierservice.dto.EmailMessage
 
   mail:
     host: smtp.mail.ru
     port: 465
     username: "anna.gudkova.rus@mail.ru"
-    password: "FALsEDYVAxiqWfqyyFBD"
+    password: ""
     properties:
       mail:
         smtp:

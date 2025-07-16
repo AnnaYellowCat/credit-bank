@@ -10,6 +10,7 @@ import com.neoflex.dealservice.mappers.StatementMapper;
 import com.neoflex.dealservice.repositories.ClientRepository;
 import com.neoflex.dealservice.repositories.StatementRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -25,21 +26,13 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CreateStatementService {
     private final ClientRepository clientRepository;
     private final StatementRepository statementRepository;
     private final RestTemplate restTemplate;
     private final ClientMapper clientMapper;
     private final StatementMapper statementMapper;
-
-    public CreateStatementService(ClientRepository clientRepository, StatementRepository statementRepository,
-                                  RestTemplate restTemplate, ClientMapper clientMapper, StatementMapper statementMapper) {
-        this.clientRepository = clientRepository;
-        this.statementRepository = statementRepository;
-        this.restTemplate = restTemplate;
-        this.clientMapper = clientMapper;
-        this.statementMapper = statementMapper;
-    }
 
     @Value("${app.calculator.offers}")
     private String urlGetOffers;
@@ -74,7 +67,7 @@ public class CreateStatementService {
         if (loanOffers != null) {
             log.debug("Loan offers from calculator service received successfully");
             loanOffers.stream().sorted((o1, o2) -> o2.getTotalAmount()
-                    .compareTo(o1.getTotalAmount()))
+                            .compareTo(o1.getTotalAmount()))
                     .forEach(loanOfferDto -> loanOfferDto.setStatementId(statement.getStatementId()));
             return loanOffers;
         } else {

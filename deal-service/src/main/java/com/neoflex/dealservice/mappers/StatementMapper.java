@@ -23,10 +23,6 @@ public interface StatementMapper {
     @Mapping(target = "statusHistory", source = "creationDate", qualifiedByName = "createStatusHistory")
     Statement toStatement(Client client, LocalDateTime creationDate);
 
-    @Mapping(target = "status", expression = "java(creditDenied?ApplicationStatus.CC_DENIED:ApplicationStatus.CC_APPROVED)")
-    @Mapping(target = "statusHistory", expression = "java(updateStatusHistory(creditDenied, statement))")
-    Statement updateStatement(boolean creditDenied, Statement statement);
-
     @Named("createStatusHistory")
     default List<StatementStatusHistoryDto> createStatusHistory(LocalDateTime creationDate) {
         List<StatementStatusHistoryDto> statusHistory = new ArrayList<>();
@@ -35,18 +31,6 @@ public interface StatementMapper {
                 .time(creationDate)
                 .changeType(AUTOMATIC)
                 .build());
-        return statusHistory;
-    }
-
-    @Named("updateStatusHistory")
-    default List<StatementStatusHistoryDto> updateStatusHistory(boolean creditDenied, Statement statement) {
-        StatementStatusHistoryDto statusHistoryElement = StatementStatusHistoryDto.builder()
-                .status(creditDenied ? CC_DENIED : CC_APPROVED)
-                .time(LocalDateTime.now())
-                .changeType(AUTOMATIC)
-                .build();
-        List<StatementStatusHistoryDto> statusHistory = statement.getStatusHistory();
-        statusHistory.add(statusHistoryElement);
         return statusHistory;
     }
 }
