@@ -21,12 +21,12 @@ import static com.neoflex.dealservice.enums.EmailMessageTheme.FINISH_REGISTRATIO
 @Slf4j
 @Service
 public class SelectOfferService extends StatementService {
+    @Value("${topic.finish-registration}")
+    private String finishRegTopic;
+
     public SelectOfferService(StatementRepository statementRepository, KafkaProducer kafkaProducer) {
         super(statementRepository, kafkaProducer);
     }
-
-    @Value("${topic.finish-registration}")
-    private String finishRegTopic;
 
     @Transactional
     public void selectOffer(LoanOfferDto offer) {

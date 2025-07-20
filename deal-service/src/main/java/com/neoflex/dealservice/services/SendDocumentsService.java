@@ -20,12 +20,12 @@ import static com.neoflex.dealservice.enums.EmailMessageTheme.*;
 @Slf4j
 @Service
 public class SendDocumentsService extends StatementService {
+    @Value("${topic.send-documents}")
+    private String sendDocsTopic;
+
     public SendDocumentsService(StatementRepository statementRepository, KafkaProducer kafkaProducer) {
         super(statementRepository, kafkaProducer);
     }
-
-    @Value("${topic.send-documents}")
-    private String sendDocsTopic;
 
     @Transactional
     public void sendDocsCreationRequest(String statementId) {

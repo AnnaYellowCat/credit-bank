@@ -18,6 +18,8 @@ public abstract class StatementService {
     protected final StatementRepository statementRepository;
     protected final KafkaProducer kafkaProducer;
 
+    private final static String EMPTY_TEXT = "";
+
     protected StatementStatusHistoryDto getStatusHistoryElement(ApplicationStatus statementStatus) {
         return StatementStatusHistoryDto.builder()
                 .status(statementStatus)
@@ -42,7 +44,7 @@ public abstract class StatementService {
                         .address(clientEmail)
                         .theme(theme)
                         .statementId(statementId)
-                        .text("")
+                        .text(EMPTY_TEXT)
                         .build(),
                 topic);
     }

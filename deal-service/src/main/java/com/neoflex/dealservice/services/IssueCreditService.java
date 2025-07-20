@@ -27,14 +27,14 @@ import static com.neoflex.dealservice.enums.CreditStatus.ISSUED;
 public class IssueCreditService extends StatementService {
     private final CreditRepository creditRepository;
 
+    @Value("${topic.credit-issued}")
+    private String creditIssuedTopic;
+
     public IssueCreditService(StatementRepository statementRepository, KafkaProducer kafkaProducer,
                               CreditRepository creditRepository) {
         super(statementRepository, kafkaProducer);
         this.creditRepository = creditRepository;
     }
-
-    @Value("${topic.credit-issued}")
-    private String creditIssuedTopic;
 
     @Transactional
     public void issueCredit(String statementId, String code) {

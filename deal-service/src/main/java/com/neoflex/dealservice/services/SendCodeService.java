@@ -20,14 +20,14 @@ import static com.neoflex.dealservice.enums.EmailMessageTheme.SEND_SES;
 @Slf4j
 @Service
 public class SendCodeService extends StatementService {
-    public SendCodeService(StatementRepository statementRepository, KafkaProducer kafkaProducer) {
-        super(statementRepository, kafkaProducer);
-    }
-
     @Value("${code.length}")
     private int codeLength;
     @Value("${topic.send-ses}")
     private String sendSesTopic;
+
+    public SendCodeService(StatementRepository statementRepository, KafkaProducer kafkaProducer) {
+        super(statementRepository, kafkaProducer);
+    }
 
     @Transactional
     public void sendCodeCreationRequest(String statementId) {

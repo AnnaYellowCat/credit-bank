@@ -33,6 +33,9 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final RestTemplate restTemplate;
 
+    private final static String SPACE = " ";
+    private final static String NEW_LINE = "\n";
+
     @Value("${spring.mail.username}")
     private String senderName;
     @Value("${app.gateway.uri}")
@@ -43,6 +46,32 @@ public class EmailService {
     private String signDocumentUrl;
     @Value("${app.deal.credit}")
     private String getCreditUrl;
+    @Value("${email.finish-registration.subject}")
+    private String finishRegSubject;
+    @Value("${email.finish-registration.text}")
+    private String finishRegText;
+    @Value("${email.create-documents.subject}")
+    private String createDocsSubject;
+    @Value("${email.create-documents.text}")
+    private String createDocsText;
+    @Value("${email.send-documents.subject}")
+    private String sendDocsSubject;
+    @Value("${email.send-documents.text}")
+    private String sendDocsText;
+    @Value("${email.send-ses.subject}")
+    private String sendSesSubject;
+    @Value("${email.send-ses.text1}")
+    private String sendSesText1;
+    @Value("${email.send-ses.text2}")
+    private String sendSesText2;
+    @Value("${email.credit-issued.subject}")
+    private String creditIssuedSubject;
+    @Value("${email.credit-issued.text}")
+    private String creditIssuedText;
+    @Value("${email.statement-denied.subject}")
+    private String statementDeniedSubject;
+    @Value("${email.statement-denied.text}")
+    private String statementDeniedText;
     @Value("${document.title}")
     private String documentTitle;
     @Value("${document.format.number}")
@@ -53,67 +82,84 @@ public class EmailService {
     private int smallMarginSize;
     @Value("${document.margin.big}")
     private int bigMarginSize;
+    @Value("${document.body.details.title}")
+    private String detailsTitle;
+    @Value("${document.body.details.amount-text}")
+    private String amountText;
+    @Value("${document.body.details.term-text}")
+    private String termText;
+    @Value("${document.body.details.payment-text}")
+    private String paymentText;
+    @Value("${document.body.details.rate-text}")
+    private String rateText;
+    @Value("${document.body.details.psk-text}")
+    private String pskText;
+    @Value("${document.body.details.insurance-text}")
+    private String insuranceText;
+    @Value("${document.body.details.salary-client-text}")
+    private String salaryClientText;
+    @Value("${document.body.details.yes-text}")
+    private String yesText;
+    @Value("${document.body.details.no-text}")
+    private String noText;
+    @Value("${document.body.details.rate-units-text}")
+    private String rateUnitsText;
+    @Value("${document.body.details.money-units-text}")
+    private String moneyUnitsText;
+    @Value("${document.body.details.term-units-text}")
+    private String termUnitsText;
+    @Value("${document.body.schedule.title}")
+    private String scheduleTitle;
+    @Value("${document.body.schedule.column-text}")
+    private String columnText;
+    @Value("${document.body.schedule.row-text}")
+    private String rowText;
+    @Value("${document.body.schedule.number-text}")
+    private String numberText;
+    @Value("${document.body.schedule.date-text}")
+    private String dateText;
+    @Value("${document.body.schedule.total-payment-text}")
+    private String totalPaymentText;
+    @Value("${document.body.schedule.interest-payment-text}")
+    private String interestPaymentText;
+    @Value("${document.body.schedule.debt-payment-text}")
+    private String debtPaymentText;
+    @Value("${document.body.schedule.remaining-debt-text}")
+    private String remainingDebtText;
 
     public SimpleMailMessage getFinishRegMessage(EmailMessage messageInfo) {
-        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
-        resultMessage.setSubject("Завершение оформления кредита");
-        resultMessage.setText("Завершите оформление кредита");
-        return resultMessage;
+        return createSimpleMailMessage(messageInfo.getAddress(), finishRegSubject, finishRegText);
     }
 
     public SimpleMailMessage getDocsMessage(EmailMessage messageInfo) {
-        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
-        resultMessage.setSubject("Оформление документов для кредита");
-        resultMessage.setText("Перейти к оформлению документов");
-        return resultMessage;
+        return createSimpleMailMessage(messageInfo.getAddress(), createDocsSubject, createDocsText);
     }
 
     public MimeMessage getSendDocsMessage(EmailMessage messageInfo) {
-        try {
-            MimeMessage resultMessage = mailSender.createMimeMessage();
-            resultMessage.setFrom(senderName);
-            MimeMessageHelper messageHelper = new MimeMessageHelper(resultMessage, true);
-            messageHelper.setTo(messageInfo.getAddress());
-            ByteArrayResource document = generateDocument(messageInfo.getStatementId().toString());
-            log.debug("Document with credit details for {} generated", messageInfo.getAddress());
-            resultMessage.setSubject("Формирование документов для кредита завершено");
-            resultMessage.setText("Ваши документы прикреплены к этому письму");
-            messageHelper.addAttachment(documentTitle, document);
-            return resultMessage;
-        } catch (MessagingException e) {
-            log.error("Failed to create email", e);
-            throw new EmailMessageException("Failed to create email");
-        }
+        ByteArrayResource document = generateDocument(messageInfo.getStatementId().toString());
+        log.debug("Document with credit details for {} generated", messageInfo.getAddress());
+        return createMimeMessage(messageInfo.getAddress(), sendDocsSubject, sendDocsText, document);
     }
 
     public SimpleMailMessage getSendSesMessage(EmailMessage messageInfo) {
-        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
-        resultMessage.setSubject("Подписание документов для кредита");
-        resultMessage.setText("Ваш код: " + messageInfo.getText() +
-                ". Ссылка для подписания документов: " +
-                gatewayUri + baseDocumentUrl + messageInfo.getStatementId() +
-                signDocumentUrl + messageInfo.getText());
-        return resultMessage;
+        return createSimpleMailMessage(messageInfo.getAddress(), sendSesSubject, sendSesText1 + messageInfo.getText() +
+                sendSesText2 + gatewayUri + baseDocumentUrl + messageInfo.getStatementId() + signDocumentUrl + messageInfo.getText());
     }
 
     public SimpleMailMessage getCreditIssuedMessage(EmailMessage messageInfo) {
-        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
-        resultMessage.setSubject("Оформление кредита завершено");
-        resultMessage.setText("Кредит успешно оформлен");
-        return resultMessage;
+        return createSimpleMailMessage(messageInfo.getAddress(), creditIssuedSubject, creditIssuedText);
     }
 
     public SimpleMailMessage getStatementDeniedMessage(EmailMessage messageInfo) {
-        SimpleMailMessage resultMessage = createSimpleMailMessage(messageInfo.getAddress());
-        resultMessage.setSubject("Отказ кредита");
-        resultMessage.setText("К сожалению, вам отказано в кредите. Причина: " + messageInfo.getText());
-        return resultMessage;
+        return createSimpleMailMessage(messageInfo.getAddress(), statementDeniedSubject, statementDeniedText + messageInfo.getText());
     }
 
-    private SimpleMailMessage createSimpleMailMessage(String address) {
+    private SimpleMailMessage createSimpleMailMessage(String address, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(senderName);
         message.setTo(address);
+        message.setSubject(subject);
+        message.setText(text);
         return message;
     }
 
@@ -129,35 +175,35 @@ public class EmailService {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern(dateFormat);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Детали кредита:\n");
-        sb.append("Сумма кредита: ").append(df.format(creditDto.getAmount())).append(" руб.\n");
-        sb.append("Срок кредита: ").append(creditDto.getTerm()).append(" мес.\n");
-        sb.append("Ежемесячный платеж: ").append(df.format(creditDto.getMonthlyPayment())).append(" руб.\n");
-        sb.append("Процентная ставка: ").append(df.format(creditDto.getRate())).append("%\n");
-        sb.append("Полная стоимость кредита: ").append(df.format(creditDto.getPsk())).append("%\n");
-        sb.append("Страховка: ").append(creditDto.getIsInsuranceEnabled() ? "Да" : "Нет").append("\n");
-        sb.append("Зарплатный клиент: ").append(creditDto.getIsSalaryClient() ? "Да" : "Нет").append("\n\n");
+        sb.append(detailsTitle).append(NEW_LINE);;
+        sb.append(amountText).append(df.format(creditDto.getAmount())).append(moneyUnitsText).append(NEW_LINE);
+        sb.append(termText).append(creditDto.getTerm()).append(termUnitsText).append(NEW_LINE);
+        sb.append(paymentText).append(df.format(creditDto.getMonthlyPayment())).append(moneyUnitsText).append(NEW_LINE);
+        sb.append(rateText).append(df.format(creditDto.getRate())).append(rateUnitsText).append(NEW_LINE);
+        sb.append(pskText).append(df.format(creditDto.getPsk())).append(moneyUnitsText).append(NEW_LINE);
+        sb.append(insuranceText).append(creditDto.getIsInsuranceEnabled() ? yesText : noText).append(NEW_LINE);
+        sb.append(salaryClientText).append(creditDto.getIsSalaryClient() ? yesText : noText).append(NEW_LINE);
 
-        sb.append("График платежей:\n");
-        String header = String.join(" | ",
-                addSpaces("№", smallMarginSize),
-                addSpaces("Дата", bigMarginSize),
-                addSpaces("Общий платеж", bigMarginSize),
-                addSpaces("Проценты", bigMarginSize),
-                addSpaces("Основной долг", bigMarginSize),
-                addSpaces("Остаток долга", bigMarginSize));
-        sb.append(header).append("\n");
-        sb.append("-".repeat(header.length())).append("\n");
+        sb.append(NEW_LINE).append(scheduleTitle).append(NEW_LINE);;
+        String header = String.join(columnText,
+                addSpaces(numberText, smallMarginSize),
+                addSpaces(dateText, bigMarginSize),
+                addSpaces(totalPaymentText + moneyUnitsText, bigMarginSize),
+                addSpaces(interestPaymentText + moneyUnitsText, bigMarginSize),
+                addSpaces(debtPaymentText + moneyUnitsText, bigMarginSize),
+                addSpaces(remainingDebtText + moneyUnitsText, bigMarginSize));
+        sb.append(header).append(NEW_LINE);
+        sb.append(rowText.repeat(header.length())).append(NEW_LINE);
 
         for (PaymentScheduleElementDto payment : creditDto.getPaymentSchedule()) {
-            String row = String.join(" | ",
+            String row = String.join(columnText,
                     addSpaces(String.valueOf(payment.getNumber()), smallMarginSize),
                     addSpaces(payment.getDate().format(dtf), bigMarginSize),
                     addSpaces(df.format(payment.getTotalPayment()), bigMarginSize),
                     addSpaces(df.format(payment.getInterestPayment()), bigMarginSize),
                     addSpaces(df.format(payment.getDebtPayment()), bigMarginSize),
                     addSpaces(df.format(payment.getRemainingDebt()), bigMarginSize));
-            sb.append(row).append("\n");
+            sb.append(row).append(NEW_LINE);
         }
 
         return new ByteArrayResource(sb.toString().getBytes(StandardCharsets.UTF_8));
@@ -183,7 +229,23 @@ public class EmailService {
     }
 
     private String addSpaces(String s, int length) {
-        return s + " ".repeat(length - s.length());
+        return s + SPACE.repeat(length - s.length());
+    }
+
+    private MimeMessage createMimeMessage(String address, String subject, String text, ByteArrayResource attachment) {
+        try {
+            MimeMessage resultMessage = mailSender.createMimeMessage();
+            MimeMessageHelper messageHelper = new MimeMessageHelper(resultMessage, true);
+            messageHelper.setFrom(senderName);
+            messageHelper.setTo(address);
+            messageHelper.setSubject(subject);
+            messageHelper.setText(text);
+            messageHelper.addAttachment(documentTitle, attachment);
+            return resultMessage;
+        } catch (MessagingException e) {
+            log.error("Failed to create email", e);
+            throw new EmailMessageException("Failed to create email");
+        }
     }
 
     public void sendEmailMessage(SimpleMailMessage message) {
