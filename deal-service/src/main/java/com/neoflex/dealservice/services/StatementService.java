@@ -15,10 +15,10 @@ import static com.neoflex.dealservice.enums.ChangeType.AUTOMATIC;
 
 @RequiredArgsConstructor
 public abstract class StatementService {
+    private final static String EMPTY_TEXT = "";
+
     protected final StatementRepository statementRepository;
     protected final KafkaProducer kafkaProducer;
-
-    private final static String EMPTY_TEXT = "";
 
     protected StatementStatusHistoryDto getStatusHistoryElement(ApplicationStatus statementStatus) {
         return StatementStatusHistoryDto.builder()

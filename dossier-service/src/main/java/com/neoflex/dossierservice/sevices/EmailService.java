@@ -30,11 +30,11 @@ import java.util.Arrays;
 @Service
 @RequiredArgsConstructor
 public class EmailService {
-    private final JavaMailSender mailSender;
-    private final RestTemplate restTemplate;
-
     private final static String SPACE = " ";
     private final static String NEW_LINE = "\n";
+
+    private final JavaMailSender mailSender;
+    private final RestTemplate restTemplate;
 
     @Value("${spring.mail.username}")
     private String senderName;
