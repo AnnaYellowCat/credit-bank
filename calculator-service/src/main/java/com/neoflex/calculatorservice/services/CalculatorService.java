@@ -240,7 +240,7 @@ public class CalculatorService {
         Period age = Period.between(birthdate, today);
         if (age.getYears() > maximumAge) {
             log.info("Loan denied: Client age {} is more than {} years", age.getYears(), maximumAge);
-            throw new LoanDeniedException("Age more than " + maximumAge + " years");
+            throw new LoanDeniedException("Возраст превышает максимально допустимый (" + maximumAge + ")");
         }
     }
 
@@ -252,7 +252,7 @@ public class CalculatorService {
             log.info("Loan denied: inappropriate employment criteria - status: {}, salary: {}, total experience: {} months, current experience: {} months",
                     status, salary.setScale(ROUNDING_SCALE, ROUNDING_MODE),
                     workExperienceTotal, workExperienceCurrent);
-            throw new LoanDeniedException("Work experience less than " + minimumExperienceTotal + " months");
+            throw new LoanDeniedException("Опыт работы меньше, чем " + minimumExperienceTotal + " мес.");
         }
     }
 
@@ -262,7 +262,7 @@ public class CalculatorService {
             log.info("Loan denied: Requested amount {} exceeds {} months salary {}",
                     loanAmount, salaryMonthsNumber, salary
                             .multiply(BigDecimal.valueOf(salaryMonthsNumber)).setScale(ROUNDING_SCALE, ROUNDING_MODE));
-            throw new LoanDeniedException("The loan amount exceeds income for " + salaryMonthsNumber + " months");
+            throw new LoanDeniedException("Сумма кредита превышает доход за " + salaryMonthsNumber + " мес.");
         }
     }
 

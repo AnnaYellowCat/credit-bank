@@ -7,6 +7,7 @@ import com.neoflex.dealservice.entities.*;
 import com.neoflex.dealservice.exceptions.CalculatorServiceException;
 import com.neoflex.dealservice.exceptions.StatementNotFoundException;
 import com.neoflex.dealservice.mappers.ClientMapper;
+import com.neoflex.dealservice.producers.KafkaProducer;
 import com.neoflex.dealservice.repositories.ClientRepository;
 import com.neoflex.dealservice.repositories.CreditRepository;
 import com.neoflex.dealservice.repositories.StatementRepository;
@@ -32,8 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.neoflex.dealservice.enums.ApplicationStatus.CC_APPROVED;
-import static com.neoflex.dealservice.enums.ApplicationStatus.CC_DENIED;
+import static com.neoflex.dealservice.enums.ApplicationStatus.*;
 import static com.neoflex.dealservice.enums.ChangeType.AUTOMATIC;
 import static com.neoflex.dealservice.enums.CreditStatus.CALCULATED;
 import static com.neoflex.dealservice.enums.EmploymentPosition.WORKER;
@@ -42,8 +42,7 @@ import static com.neoflex.dealservice.enums.Gender.FEMALE;
 import static com.neoflex.dealservice.enums.MaritalStatus.SINGLE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -62,6 +61,9 @@ public class FinishRegistrationServiceTests {
 
     @MockitoBean
     private RestTemplate restTemplate;
+
+    @MockitoBean
+    private KafkaProducer kafkaProducer;
 
     @Autowired
     private ClientMapper clientMapper;
@@ -93,6 +95,7 @@ public class FinishRegistrationServiceTests {
         List<StatementStatusHistoryDto> statusHistory = new ArrayList<>();
         Statement statement = Statement.builder()
                 .client(client)
+                .status(APPROVED)
                 .appliedOffer(new LoanOfferDto())
                 .statusHistory(statusHistory)
                 .build();
@@ -121,6 +124,7 @@ public class FinishRegistrationServiceTests {
         )).thenReturn(mockResponse);
         when(creditRepository.save(any(Credit.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(statementRepository.save(any(Statement.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class), anyString());
 
         finishRegistrationService.finishRegistration(finishRegistrationRequestDto, String.valueOf(statementId));
 
@@ -192,6 +196,7 @@ public class FinishRegistrationServiceTests {
         List<StatementStatusHistoryDto> statusHistory = new ArrayList<>();
         Statement statement = Statement.builder()
                 .client(client)
+                .status(APPROVED)
                 .appliedOffer(new LoanOfferDto())
                 .statusHistory(statusHistory)
                 .build();
@@ -224,6 +229,7 @@ public class FinishRegistrationServiceTests {
                 any(ParameterizedTypeReference.class)))
                 .thenThrow(exception);
         when(statementRepository.save(any(Statement.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class), anyString());
 
         finishRegistrationService.finishRegistration(finishRegistrationRequestDto, String.valueOf(statementId));
 
@@ -263,6 +269,7 @@ public class FinishRegistrationServiceTests {
         List<StatementStatusHistoryDto> statusHistory = new ArrayList<>();
         Statement statement = Statement.builder()
                 .client(client)
+                .status(APPROVED)
                 .appliedOffer(new LoanOfferDto())
                 .statusHistory(statusHistory)
                 .build();

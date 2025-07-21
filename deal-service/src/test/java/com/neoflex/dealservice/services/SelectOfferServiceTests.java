@@ -1,9 +1,12 @@
 package com.neoflex.dealservice.services;
 
+import com.neoflex.dealservice.dto.EmailMessage;
 import com.neoflex.dealservice.dto.LoanOfferDto;
 import com.neoflex.dealservice.dto.StatementStatusHistoryDto;
+import com.neoflex.dealservice.entities.Client;
 import com.neoflex.dealservice.entities.Statement;
 import com.neoflex.dealservice.exceptions.StatementNotFoundException;
+import com.neoflex.dealservice.producers.KafkaProducer;
 import com.neoflex.dealservice.repositories.StatementRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -18,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.neoflex.dealservice.enums.ApplicationStatus.APPROVED;
+import static com.neoflex.dealservice.enums.ApplicationStatus.PREAPPROVAL;
 import static com.neoflex.dealservice.enums.ChangeType.AUTOMATIC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,6 +37,9 @@ public class SelectOfferServiceTests {
     @MockitoBean
     private StatementRepository statementRepository;
 
+    @MockitoBean
+    private KafkaProducer kafkaProducer;
+
     @Test
     public void selectOffer_UpdatesStatement_WhenStatementExists() {
         UUID statementId = UUID.randomUUID();
@@ -46,12 +53,16 @@ public class SelectOfferServiceTests {
                 .isSalaryClient(false)
                 .build();
         List<StatementStatusHistoryDto> statusHistory = new ArrayList<>();
+        Client client = Client.builder().email("rose@mail.ru").build();
         when(statementRepository.getReferenceById(statementId)).thenReturn(Statement.builder()
                 .statementId(statementId)
+                .client(client)
+                .status(PREAPPROVAL)
                 .statusHistory(statusHistory)
                 .build());
         when(statementRepository.save(any(Statement.class))).thenAnswer(invocation -> invocation.getArgument(0));
         ArgumentCaptor<Statement> statementCaptor = ArgumentCaptor.forClass(Statement.class);
+        doNothing().when(kafkaProducer).sendMessage(any(EmailMessage.class), anyString());
 
         selectOfferService.selectOffer(offer);
 
