@@ -19,7 +19,7 @@ spring:
     host: smtp.mail.ru
     port: 465
     username: "anna.gudkova.rus@mail.ru"
-    password: "k7AXk335132QjbxEuii6"
+    password: ""
     properties:
       mail:
         smtp:
