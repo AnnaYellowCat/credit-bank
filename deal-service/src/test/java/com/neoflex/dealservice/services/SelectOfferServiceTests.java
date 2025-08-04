@@ -2,7 +2,6 @@ package com.neoflex.dealservice.services;
 
 import com.neoflex.dealservice.dto.EmailMessage;
 import com.neoflex.dealservice.dto.LoanOfferDto;
-import com.neoflex.dealservice.dto.StatementStatusHistoryDto;
 import com.neoflex.dealservice.entities.Client;
 import com.neoflex.dealservice.entities.Statement;
 import com.neoflex.dealservice.exceptions.StatementNotFoundException;
