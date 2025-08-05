@@ -13,8 +13,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClient.ResponseSpec.ErrorHandler;
 import org.springframework.web.client.RestClientException;
-
 import java.util.List;
 
 @Slf4j
@@ -69,7 +69,7 @@ public class GatewayService {
 
     public void sendCodeCreationRequest(String statementId) {
         sendPostRequestWithoutResponse(urlSignDocumentsPart1 + statementId + urlSignDocumentsPart2, null,
-                "send request for signing documents");
+                "send request for signing documents in deal service");
     }
 
     public void signDocuments(String statementId, String code) {
@@ -95,23 +95,11 @@ public class GatewayService {
                     .uri(url)
                     .body(body)
                     .retrieve()
-                    .onStatus(
-                            HttpStatusCode::is5xxServerError,
-                            (request, response) -> {
-                                log.error("Failed to {} due to server error, status code: {}", errorText, response.getStatusCode());
-                                throw new ExternalServiceException("Deal service internal error");
-                            }
-                    )
-                    .onStatus(
-                            HttpStatusCode::is4xxClientError,
-                            (request, response) -> {
-                                log.error("Failed to {} due to client error, status code: {}", errorText, response.getStatusCode());
-                                throw new ClientHttpException(response.getStatusCode());
-                            }
-                    )
+                    .onStatus(HttpStatusCode::is5xxServerError, getServerErrorHandler(errorText))
+                    .onStatus(HttpStatusCode::is4xxClientError, getClientErrorHandler(errorText))
                     .body(responseType);
         } catch (RestClientException e) {
-            log.error("Failed to {} due to unexpected error: {}", errorText, e.getMessage());
+            handleUnexpectedException(e, errorText);
             throw new ExternalServiceException("Failed to " + errorText + " due to unexpected error");
         }
     }
@@ -124,23 +112,11 @@ public class GatewayService {
                 request.body(body);
             }
             request.retrieve()
-                    .onStatus(
-                            HttpStatusCode::is5xxServerError,
-                            (httpRequest, response) -> {
-                                log.error("Failed to {} due to server error, status code: {}", errorText, response.getStatusCode());
-                                throw new ExternalServiceException("Deal service internal error");
-                            }
-                    )
-                    .onStatus(
-                            HttpStatusCode::is4xxClientError,
-                            (httpRequest, response) -> {
-                                log.error("Failed to {} due to client error, status code: {}", errorText, response.getStatusCode());
-                                throw new ClientHttpException(response.getStatusCode());
-                            }
-                    )
+                    .onStatus(HttpStatusCode::is5xxServerError, getServerErrorHandler(errorText))
+                    .onStatus(HttpStatusCode::is4xxClientError, getClientErrorHandler(errorText))
                     .toBodilessEntity();
         } catch (RestClientException e) {
-            log.error("Failed to {} due to unexpected error: {}", errorText, e.getMessage());
+            handleUnexpectedException(e, errorText);
             throw new ExternalServiceException("Failed to " + errorText + " due to unexpected error");
         }
     }
@@ -150,24 +126,30 @@ public class GatewayService {
             return restClient.get()
                     .uri(url)
                     .retrieve()
-                    .onStatus(
-                            HttpStatusCode::is5xxServerError,
-                            (request, response) -> {
-                                log.error("Failed to {} due to server error, status code: {}", errorText, response.getStatusCode());
-                                throw new ExternalServiceException("Deal service internal error");
-                            }
-                    )
-                    .onStatus(
-                            HttpStatusCode::is4xxClientError,
-                            (request, response) -> {
-                                log.error("Failed to {} due to client error, status code: {}", errorText, response.getStatusCode());
-                                throw new ClientHttpException(response.getStatusCode());
-                            }
-                    )
+                    .onStatus(HttpStatusCode::is5xxServerError, getServerErrorHandler(errorText))
+                    .onStatus(HttpStatusCode::is4xxClientError, getClientErrorHandler(errorText))
                     .body(responseType);
         } catch (RestClientException e) {
-            log.error("Failed to {} due to unexpected error: {}", errorText, e.getMessage());
+            handleUnexpectedException(e, errorText);
             throw new ExternalServiceException("Failed to " + errorText + " due to unexpected error");
         }
+    }
+
+    private ErrorHandler getServerErrorHandler(String errorText) {
+        return (request, response) -> {
+            log.error("Failed to {} due to server error, status code: {}", errorText, response.getStatusCode());
+            throw new ExternalServiceException("Deal or statement service internal error");
+        };
+    }
+
+    private ErrorHandler getClientErrorHandler(String errorText) {
+        return (request, response) -> {
+            log.error("Failed to {} due to client error, status code: {}", errorText, response.getStatusCode());
+            throw new ClientHttpException(response.getStatusCode());
+        };
+    }
+
+    private void handleUnexpectedException(RestClientException e, String errorText) {
+        log.error("Failed to {} due to unexpected error: {}", errorText, e.getMessage());
     }
 }
