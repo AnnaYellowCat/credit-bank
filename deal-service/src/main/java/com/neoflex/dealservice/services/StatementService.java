@@ -22,9 +22,9 @@ public abstract class StatementService {
 
     protected StatementStatusHistoryDto getStatusHistoryElement(ApplicationStatus statementStatus) {
         return StatementStatusHistoryDto.builder()
-                .status(statementStatus)
+                .status(statementStatus.toString())
                 .time(LocalDateTime.now())
-                .changeType(AUTOMATIC)
+                .changeType(String.valueOf(AUTOMATIC))
                 .build();
     }
 

@@ -59,10 +59,10 @@ public class CreateStatementService {
             loanOffers = response.getBody();
         } catch (HttpServerErrorException e) {
             log.error("Failed to get loan offers from calculator service, status code {}", e.getStatusCode());
-            throw new CalculatorServiceException("Failed to get credit from calculator service");
+            throw new CalculatorServiceException("Failed to get loan offers from calculator service");
         } catch (Exception e) {
             log.error("Failed to get loan offers from calculator service due to unexpected error: {}", e.getMessage());
-            throw new CalculatorServiceException("Failed to get credit from calculator service due to unexpected error");
+            throw new CalculatorServiceException("Failed to get loan offers from calculator service due to unexpected error");
         }
         if (loanOffers != null) {
             log.debug("Loan offers from calculator service received successfully");

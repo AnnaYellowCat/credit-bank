@@ -27,9 +27,9 @@ public interface StatementMapper {
     default List<StatementStatusHistoryDto> createStatusHistory(LocalDateTime creationDate) {
         List<StatementStatusHistoryDto> statusHistory = new ArrayList<>();
         statusHistory.add(StatementStatusHistoryDto.builder()
-                .status(PREAPPROVAL)
+                .status(String.valueOf(PREAPPROVAL))
                 .time(creationDate)
-                .changeType(AUTOMATIC)
+                .changeType(String.valueOf(AUTOMATIC))
                 .build());
         return statusHistory;
     }

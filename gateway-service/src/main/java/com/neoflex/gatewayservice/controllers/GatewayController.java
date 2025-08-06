@@ -1,9 +1,13 @@
-package com.neoflex.dealservice.controllers;
+package com.neoflex.gatewayservice.controllers;
 
-import com.neoflex.dealservice.api.DealApi;
-import com.neoflex.dealservice.dto.*;
-import com.neoflex.dealservice.exceptions.*;
-import com.neoflex.dealservice.services.*;
+import com.neoflex.gatewayservice.api.GatewayApi;
+import com.neoflex.gatewayservice.dto.FinishRegistrationRequestDto;
+import com.neoflex.gatewayservice.dto.LoanOfferDto;
+import com.neoflex.gatewayservice.dto.LoanStatementRequestDto;
+import com.neoflex.gatewayservice.dto.StatementDto;
+import com.neoflex.gatewayservice.exceptions.ClientHttpException;
+import com.neoflex.gatewayservice.exceptions.ExternalServiceException;
+import com.neoflex.gatewayservice.services.GatewayService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -14,36 +18,29 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/deal")
+@RequestMapping("/gateway")
 @RequiredArgsConstructor
-public class DealController implements DealApi {
-    private final CreateStatementService createStatementService;
-    private final SelectOfferService selectOfferService;
-    private final FinishRegistrationService finishRegistrationService;
-    private final SendDocumentsService sendDocumentsService;
-    private final SendCodeService sendCodeService;
-    private final IssueCreditService issueCreditService;
-    private final FetchCreditInfoService fetchCreditInfoService;
-    private final AdminStatementService adminStatementService;
+public class GatewayController implements GatewayApi {
+    private final GatewayService gatewayService;
 
     @Override
     @PostMapping("/statement")
     public ResponseEntity<List<LoanOfferDto>> getOffers(@RequestBody LoanStatementRequestDto loanStatementRequestDto) {
         log.info("Received request for loan offers: loan amount {}, term {}",
                 loanStatementRequestDto.getAmount(), loanStatementRequestDto.getTerm());
-        List<LoanOfferDto> offers = createStatementService.getOffers(loanStatementRequestDto);
+        List<LoanOfferDto> offers = gatewayService.getOffers(loanStatementRequestDto);
         log.info("Success: loan offers with total amount {}, {}, {} and {} returned", offers.get(0).getTotalAmount(),
                 offers.get(1).getTotalAmount(), offers.get(2).getTotalAmount(), offers.get(3).getTotalAmount());
         return ResponseEntity.ok(offers);
     }
 
     @Override
-    @PostMapping("/offer/select")
+    @PostMapping("/offer")
     public ResponseEntity<Void> selectOffer(@RequestBody LoanOfferDto loanOfferDto) {
         log.info("Received request for choosing loan offer: rate {}, total amount {}",
                 loanOfferDto.getRate(), loanOfferDto.getTotalAmount());
-        selectOfferService.selectOffer(loanOfferDto);
-        log.info("Success: selected loan offer with rate {} and total amount {} saved",
+        gatewayService.selectOffer(loanOfferDto);
+        log.info("Success: selected loan offer with rate {} and total amount {} sent",
                 loanOfferDto.getRate(), loanOfferDto.getTotalAmount());
         return ResponseEntity.ok().build();
     }
@@ -53,17 +50,16 @@ public class DealController implements DealApi {
     public ResponseEntity<Void> finishRegistration(@PathVariable String statementId,
                                                    @RequestBody FinishRegistrationRequestDto finishRegistrationRequestDto) {
         log.info("Received request for completion of registration for statement with id {}", statementId);
-        finishRegistrationService.finishRegistration(finishRegistrationRequestDto, statementId);
+        gatewayService.finishReg(statementId, finishRegistrationRequestDto);
         log.info("Success: registration finished for statement with id {}", statementId);
         return ResponseEntity.ok().build();
     }
-
 
     @Override
     @PostMapping("/document/{statementId}/send")
     public ResponseEntity<Void> sendDocumentsRequest(@PathVariable String statementId) {
         log.info("Received request for creation documents for statement with id {}", statementId);
-        sendDocumentsService.sendDocsCreationRequest(statementId);
+        gatewayService.sendDocsCreationRequest(statementId);
         log.info("Success: request for creation documents for statement with id {} sent", statementId);
         return ResponseEntity.ok().build();
     }
@@ -72,7 +68,7 @@ public class DealController implements DealApi {
     @PostMapping("/document/{statementId}/sign")
     public ResponseEntity<Void> signDocumentsRequest(@PathVariable String statementId) {
         log.info("Received request for creation code for statement with id {}", statementId);
-        sendCodeService.sendCodeCreationRequest(statementId);
+        gatewayService.sendCodeCreationRequest(statementId);
         log.info("Success: request for creation code for statement with id {} sent", statementId);
         return ResponseEntity.ok().build();
     }
@@ -81,25 +77,16 @@ public class DealController implements DealApi {
     @PostMapping("/document/{statementId}/code")
     public ResponseEntity<Void> signDocuments(@PathVariable String statementId, @RequestParam String code) {
         log.info("Received request for signing documents for statement with id {}", statementId);
-        issueCreditService.issueCredit(statementId, code);
+        gatewayService.signDocuments(statementId, code);
         log.info("Success: documents for statement with id {} signed", statementId);
         return ResponseEntity.ok().build();
-    }
-
-    @Override
-    @GetMapping("/credit/{statementId}")
-    public ResponseEntity<CreditDto> getCredit(@PathVariable String statementId) {
-        log.info("Received request for getting credit for statement with id {}", statementId);
-        CreditDto creditDto = fetchCreditInfoService.getCreditInfo(statementId);
-        log.info("Success: credit for statement with id {} got", statementId);
-        return ResponseEntity.ok(creditDto);
     }
 
     @Override
     @GetMapping("/admin/statement/{statementId}")
     public ResponseEntity<StatementDto> getStatement(@PathVariable String statementId) {
         log.info("Received request for getting statement with id {}", statementId);
-        StatementDto statementDto = adminStatementService.getStatement(statementId);
+        StatementDto statementDto = gatewayService.getStatement(statementId);
         log.info("Success: statement with id {} got", statementId);
         return ResponseEntity.ok(statementDto);
     }
@@ -108,28 +95,18 @@ public class DealController implements DealApi {
     @GetMapping("/admin/statement")
     public ResponseEntity<List<StatementDto>> getStatements() {
         log.info("Received request for getting all statements");
-        List<StatementDto> statements = adminStatementService.getStatements();
+        List<StatementDto> statements = gatewayService.getStatements();
         log.info("Success: {} statement got", statements.size());
         return ResponseEntity.ok(statements);
     }
 
-    @ExceptionHandler(InvalidCodeException.class)
-    public ResponseEntity<Void> handleInvalidCodeException(){
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    @ExceptionHandler(ClientHttpException.class)
+    public ResponseEntity<Void> handleClientHttpException(ClientHttpException e){
+        return ResponseEntity.status(e.getStatusCode()).build();
     }
 
-    @ExceptionHandler({StatementNotFoundException.class, CreditNotFoundException.class})
-    public ResponseEntity<Void> handleNotFoundException(){
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-    }
-
-    @ExceptionHandler(DocumentIsAlreadySignedException.class)
-    public ResponseEntity<Void> handleDocumentIsAlreadySignedException(){
-        return ResponseEntity.status(HttpStatus.CONFLICT).build();
-    }
-
-    @ExceptionHandler(CalculatorServiceException.class)
-    public ResponseEntity<Void> handleCalculatorServiceException(){
+    @ExceptionHandler(ExternalServiceException.class)
+    public ResponseEntity<Void> handleExternalServiceException(){
         return ResponseEntity.status(HttpStatus.FAILED_DEPENDENCY).build();
     }
 }
