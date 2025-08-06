@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.neoflex.dealservice.enums.ApplicationStatus.*;
-import static com.neoflex.dealservice.enums.ChangeType.AUTOMATIC;
 import static com.neoflex.dealservice.enums.CreditStatus.CALCULATED;
 import static com.neoflex.dealservice.enums.EmploymentPosition.WORKER;
 import static com.neoflex.dealservice.enums.EmploymentStatus.EMPLOYED;
@@ -166,8 +165,8 @@ public class FinishRegistrationServiceTests {
         assertEquals(createdCredit.getCreditId(), updatedStatement.getCredit().getCreditId());
         StatementStatusHistoryDto statusHistoryElement = updatedStatement.getStatusHistory().getLast();
         assertNotNull(statusHistoryElement.getTime());
-        assertEquals(CC_APPROVED, statusHistoryElement.getStatus());
-        assertEquals(AUTOMATIC, statusHistoryElement.getChangeType());
+        assertEquals("CC_APPROVED", statusHistoryElement.getStatus());
+        assertEquals("AUTOMATIC", statusHistoryElement.getChangeType());
     }
 
     @Test
@@ -239,8 +238,8 @@ public class FinishRegistrationServiceTests {
         assertEquals(CC_DENIED, updatedStatement.getStatus());
         StatementStatusHistoryDto statusHistoryElement = updatedStatement.getStatusHistory().getLast();
         assertNotNull(statusHistoryElement.getTime());
-        assertEquals(CC_DENIED, statusHistoryElement.getStatus());
-        assertEquals(AUTOMATIC, statusHistoryElement.getChangeType());
+        assertEquals("CC_DENIED", statusHistoryElement.getStatus());
+        assertEquals("AUTOMATIC", statusHistoryElement.getChangeType());
     }
 
     @Test

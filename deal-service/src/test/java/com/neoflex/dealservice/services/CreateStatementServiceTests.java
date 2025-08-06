@@ -2,6 +2,7 @@ package com.neoflex.dealservice.services;
 
 import com.neoflex.dealservice.dto.LoanOfferDto;
 import com.neoflex.dealservice.dto.LoanStatementRequestDto;
+import com.neoflex.dealservice.dto.StatementStatusHistoryDto;
 import com.neoflex.dealservice.entities.Client;
 import com.neoflex.dealservice.entities.Statement;
 import com.neoflex.dealservice.exceptions.CalculatorServiceException;
@@ -98,9 +99,9 @@ public class CreateStatementServiceTests {
         assertEquals(PREAPPROVAL, statement.getStatus());
         assertNotNull(statement.getCreationDate());
         StatementStatusHistoryDto statusHistoryElement = statement.getStatusHistory().getLast();
-        assertEquals(PREAPPROVAL, statusHistoryElement.getStatus());
+        assertEquals("PREAPPROVAL", statusHistoryElement.getStatus());
         assertEquals(statement.getCreationDate(), statusHistoryElement.getTime());
-        assertEquals(AUTOMATIC, statusHistoryElement.getChangeType());
+        assertEquals("AUTOMATIC", statusHistoryElement.getChangeType());
         for (int i = 0; i < offers.size() - 1; i++) {
             assertTrue(offers.get(i).getTotalAmount()
                     .compareTo(offers.get(i + 1).getTotalAmount()) >= 0);

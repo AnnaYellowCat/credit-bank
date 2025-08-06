@@ -2,6 +2,7 @@ package com.neoflex.dealservice.services;
 
 import com.neoflex.dealservice.dto.EmailMessage;
 import com.neoflex.dealservice.dto.LoanOfferDto;
+import com.neoflex.dealservice.dto.StatementStatusHistoryDto;
 import com.neoflex.dealservice.entities.Client;
 import com.neoflex.dealservice.entities.Statement;
 import com.neoflex.dealservice.exceptions.StatementNotFoundException;
@@ -21,7 +22,6 @@ import java.util.UUID;
 
 import static com.neoflex.dealservice.enums.ApplicationStatus.APPROVED;
 import static com.neoflex.dealservice.enums.ApplicationStatus.PREAPPROVAL;
-import static com.neoflex.dealservice.enums.ChangeType.AUTOMATIC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -70,9 +70,9 @@ public class SelectOfferServiceTests {
         assertThat(offer).usingRecursiveComparison().isEqualTo(statement.getAppliedOffer());
         assertEquals(APPROVED, statement.getStatus());
         StatementStatusHistoryDto statusHistoryElement = statement.getStatusHistory().getLast();
-        assertEquals(APPROVED, statusHistoryElement.getStatus());
+        assertEquals("APPROVED", statusHistoryElement.getStatus());
         assertNotNull(statusHistoryElement.getTime());
-        assertEquals(AUTOMATIC, statusHistoryElement.getChangeType());
+        assertEquals("AUTOMATIC", statusHistoryElement.getChangeType());
     }
 
     @Test
