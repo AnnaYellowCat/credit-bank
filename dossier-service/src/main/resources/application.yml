@@ -4,40 +4,6 @@ spring:
   application:
     name: dossier-service
 
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: my-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-        spring.json.use.type.headers: false
-        spring.json.value.default.type: com.neoflex.dossierservice.dto.EmailMessage
-
-  mail:
-    host: smtp.mail.ru
-    port: 465
-    username: "anna.gudkova.rus@mail.ru"
-    password: ""
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-          ssl:
-            enable: true
-
-app:
-  gateway:
-    uri: http://localhost:8081
-  deal:
-    credit: /deal/credit/
-    document:
-      base: /deal/document/
-      sign: /code?code=
-
 email:
   finish-registration:
     subject: "Завершение оформления кредита"

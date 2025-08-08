@@ -3,21 +3,3 @@ server:
 spring:
   application:
     name: gateway-service
-
-app:
-  statement:
-    get-offers: http://localhost:8082/statement
-    select-offer: http://localhost:8082/statement/offer
-  deal:
-    finish-reg: http://localhost:8081//deal/calculate/
-    send-documents-request:
-      part1: http://localhost:8081/deal/document/
-      part2: /send
-    sign-documents-request:
-      part1: http://localhost:8081/deal/document/
-      part2: /sign
-    sign-documents:
-      part1: http://localhost:8081/deal/document/
-      part2: /code?code=
-    get-statement: http://localhost:8081/deal/admin/statement/
-    get-statements: http://localhost:8081/deal/admin/statement
