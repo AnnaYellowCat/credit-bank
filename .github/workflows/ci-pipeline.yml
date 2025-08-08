@@ -40,7 +40,7 @@ jobs:
         run: |
           mvn -B verify sonar:sonar \
           -Dsonar.projectKey=AnnaYellowCat_credit-bank \
-          -Dsonar.organization=AnnaYellowCat \
+          -Dsonar.organization=annayellowcat \
           -Dsonar.host.url=https://sonarcloud.io \
           -Dsonar.login=$SONAR_TOKEN \
           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
