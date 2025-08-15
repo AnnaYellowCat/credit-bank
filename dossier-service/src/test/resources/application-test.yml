@@ -1,0 +1,95 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: dossier-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: my-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.neoflex.dossierservice.dto.EmailMessage
+
+  mail:
+    host: smtp.mail.ru
+    port: 465
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: true
+
+app:
+  gateway:
+    uri: http://localhost:8081
+  deal:
+    credit: /deal/credit/
+    document:
+      base: /deal/document/
+      sign: /code?code=
+
+
+email:
+  finish-registration:
+    subject: "Завершение оформления кредита"
+    text: "Завершите оформление кредита"
+  create-documents:
+    subject: "Оформление документов для кредита"
+    text: "Перейти к оформлению документов"
+  send-documents:
+    subject: "Формирование документов для кредита завершено"
+    text: "Ваши документы прикреплены к этому письму"
+  send-ses:
+    subject: "Подписание документов для кредита"
+    text1: "Ваш код: "
+    text2: ". Ссылка для подписания документов: "
+  credit-issued:
+    subject: "Оформление кредита завершено"
+    text: "Кредит успешно оформлен"
+  statement-denied:
+    subject: "Отказ кредита"
+    text: "К сожалению, вам отказано в кредите. Причина: "
+
+document:
+  title: "Детали кредита.txt"
+  margin:
+    big: 20
+    small: 5
+  format:
+    number: "#,##0.00"
+    date: "dd.MM.yyyy"
+  body:
+    details:
+      title: "Детали кредита:"
+      amount-text: "Сумма кредита: "
+      term-text: "Срок кредита: "
+      payment-text: "Ежемесячный платеж: "
+      rate-text: "Процентная ставка: "
+      psk-text: "Полная стоимость кредита: "
+      insurance-text: "Страховка: "
+      salary-client-text: "Зарплатный клиент: "
+      yes-text: "Да"
+      no-text: "Нет"
+      rate-units-text: "%"
+      money-units-text: " руб."
+      term-units-text: " мес."
+    schedule:
+      title: "График платежей:"
+      column-text: " | "
+      row-text: "-"
+      number-text: "№"
+      date-text: "Дата"
+      total-payment-text: "Общий платеж,"
+      interest-payment-text: "Проценты,"
+      debt-payment-text: "Основной долг,"
+      remaining-debt-text: "Остаток долга,"

@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: calculator-service
+insurance:
+  percentage: 2.5
+salary:
+  minimum: 22000
+  months:
+    number: 6
+age:
+  maximum: 70
+experience:
+  minimum:
+    total: 12
+    current: 3
+rate:
+  base: 15
+  adjustment:
+    minimum: 1
+    small: 2
+    medium: 3
+    big: 5

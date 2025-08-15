@@ -1,0 +1,12 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: statement-service
+
+app:
+  gateway:
+    uri: http://localhost:8081
+  deal:
+    get: /deal/statement
+    select: /deal/offer/select

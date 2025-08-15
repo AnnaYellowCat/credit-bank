@@ -1,0 +1,43 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: deal-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/credit_bank_deal_service
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+  liquibase:
+    change-log: classpath:/db/changelog/changelog.xml
+    enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+app:
+  gateway:
+    uri: http://localhost:8080
+  calculator:
+    offers: /calculator/offers
+    credit: /calculator/calc
+
+code:
+  length: 6
+
+topic:
+  finish-registration: finish-registration
+  create-documents: create-documents
+  send-documents: send-documents
+  send-ses: send-ses
+  credit-issued: credit-issued
+  statement-denied: statement-denied

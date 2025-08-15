@@ -1,0 +1,639 @@
+openapi: 3.0.1
+info:
+  title: Deal Service API
+  version: 1.0.0
+  description: API for statements and documents operations and administrative actions
+
+servers:
+  - url: http://localhost:8081
+    description: Local server
+
+paths:
+  /deal/statement:
+    post:
+      tags:
+        - Deal
+      operationId: getOffers
+      summary: Getting loan offers
+      description: Gets loan offers with all possible loan terms
+      requestBody:
+        description: Data for getting loan offers
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanStatementRequestDto'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoanOfferDto'
+              examples:
+                fourOffers:
+                  summary: Example with 4 loan offers
+                  value:
+                    - statementId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      requestedAmount: 100000
+                      totalAmount: 150000
+                      term: 36
+                      monthlyPayment: 10000
+                      rate: 20
+                      isInsuranceEnabled: false
+                      isSalaryClient: false
+                    - statementId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      requestedAmount: 100000
+                      totalAmount: 140000
+                      term: 36
+                      monthlyPayment: 8000
+                      rate: 16
+                      isInsuranceEnabled: true
+                      isSalaryClient: false
+                    - statementId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      requestedAmount: 100000
+                      totalAmount: 130000
+                      term: 36
+                      monthlyPayment: 6000
+                      rate: 14
+                      isInsuranceEnabled: false
+                      isSalaryClient: true
+                    - statementId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      requestedAmount: 100000
+                      totalAmount: 120000
+                      term: 36
+                      monthlyPayment: 4000
+                      rate: 12
+                      isInsuranceEnabled: false
+                      isSalaryClient: false
+        '424':
+          description: Failed to get info from calculator service
+
+  /deal/offer/select:
+    post:
+      tags:
+        - Deal
+      operationId: selectOffer
+      summary: Choosing one of the offers
+      description: Accepts one offer
+      requestBody:
+        description: Data for choosing one of the loan offer
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanOfferDto'
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Statement not found
+        '409':
+          description: Document is already signed
+
+  /deal/calculate/{statementId}:
+    post:
+      tags:
+        - Deal
+      operationId: finishRegistration
+      summary: Completion of registration
+      description: Finishes registration and makes a full calculation of the loan
+      parameters:
+        - name: statementId
+          in: path
+          description: Unique id of loan statement
+          required: true
+          schema:
+            type: string
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      requestBody:
+        description: Data for completion of registration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinishRegistrationRequestDto'
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Statement not found
+        '409':
+          description: Document is already signed
+        '424':
+          description: Failed to get info from calculator service
+
+  /deal/document/{statementId}/send:
+    post:
+      tags:
+        - Document
+      operationId: sendDocumentsRequest
+      summary: Sending documents request
+      description: Sends a request to send documents
+      parameters:
+        - name: statementId
+          in: path
+          description: Unique id of loan statement
+          required: true
+          schema:
+            type: string
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Statement not found
+        '409':
+          description: Document is already signed
+
+  /deal/document/{statementId}/sign:
+    post:
+      tags:
+        - Document
+      operationId: signDocumentsRequest
+      summary: Signing documents request
+      description: Sends a request to sign documents
+      parameters:
+        - name: statementId
+          in: path
+          description: Unique id of loan statement
+          required: true
+          schema:
+            type: string
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Statement not found
+        '409':
+          description: Document is already signed
+
+  /deal/document/{statementId}/code:
+    post:
+      tags:
+        - Document
+      operationId: signDocuments
+      summary: Signing documents
+      description: Signs documents and issues a credit
+      parameters:
+        - name: statementId
+          in: path
+          description: Unique id of loan statement
+          required: true
+          schema:
+            type: string
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        - name: code
+          in: query
+          description: Code for signing documents
+          required: true
+          schema:
+            type: string
+          example: "A7B9Z2"
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid code
+        '404':
+          description: Statement not found
+        '409':
+          description: Document is already signed
+
+  /deal/credit/{statementId}:
+    get:
+      tags:
+        - Credit
+      operationId: getCredit
+      summary: Getting credit
+      description: Gets credit information
+      parameters:
+        - name: statementId
+          in: path
+          description: Unique id of loan statement
+          required: true
+          schema:
+            type: string
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditDto'
+        '404':
+          description: Statement or credit not found
+
+  /deal/admin/statement/{statementId}:
+    get:
+      tags:
+        - Admin
+      operationId: getStatement
+      summary: Getting statement
+      description: Gets statement information by id
+      parameters:
+        - name: statementId
+          in: path
+          description: Unique id of statement
+          required: true
+          schema:
+            type: string
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatementDto'
+        '404':
+          description: Statement not found
+
+  /deal/admin/statement:
+    get:
+      tags:
+        - Admin
+      operationId: getStatements
+      summary: Getting statements
+      description: Gets all statements
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatementDto'
+
+components:
+  schemas:
+    LoanStatementRequestDto:
+      type: object
+      description: Data for creating loan offers
+      required:
+        - amount
+        - term
+        - firstName
+        - lastName
+        - email
+        - birthDate
+        - passportSeries
+        - passportNumber
+      properties:
+        amount:
+          type: number
+          format: bigdecimal
+          description: Requested loan amount
+          example: 100000
+        term:
+          type: integer
+          description: Loan term, number of months
+          example: 36
+        firstName:
+          type: string
+          description: First name of client
+          example: "Ivan"
+        lastName:
+          type: string
+          description: Last name of client
+          example: "Ivanov"
+        middleName:
+          type: string
+          description: Middle name of client
+          example: "Ivanovich"
+        email:
+          type: string
+          description: Email of client
+          example: "ivan@mail.ru"
+        birthDate:
+          type: string
+          format: date
+          description: Date of birth of client
+          example: "2000-01-01"
+        passportSeries:
+          type: string
+          description: Passport series of client
+          example: "4567"
+        passportNumber:
+          type: string
+          description: Passport number of client
+          example: "578430"
+
+    LoanOfferDto:
+      type: object
+      description: Information about loan offer
+      required:
+        - statementId
+        - requestedAmount
+        - totalAmount
+        - term
+        - monthlyPayment
+        - rate
+        - isInsuranceEnabled
+        - isSalaryClient
+      properties:
+        statementId:
+          type: string
+          format: uuid
+          description: Unique id of loan statement
+          example: "39h479Lf7dGG90"
+        requestedAmount:
+          type: number
+          format: bigdecimal
+          description: Requested loan amount
+          example: 100000
+        totalAmount:
+          type: number
+          format: bigdecimal
+          description: Loan amount including interest and insurance costs
+          example: 130000
+        term:
+          type: integer
+          description: Loan term, number of months
+          example: 36
+        monthlyPayment:
+          type: number
+          format: bigdecimal
+          description: The amount of payment for every month
+          example: 10000
+        rate:
+          type: number
+          format: bigdecimal
+          description: Loan rate calculated depending on parameters, percentages
+          example: 22
+        isInsuranceEnabled:
+          type: boolean
+          description: Information about whether insurance is included
+          example: true
+        isSalaryClient:
+          type: boolean
+          description: Information about whether the client is a salary client
+          example: false
+
+    FinishRegistrationRequestDto:
+      type: object
+      description: Information about loan offer
+      required:
+        - gender
+        - maritalStatus
+        - dependentAmount
+        - passportIssueDate
+        - passportIssueBranch
+        - employment
+        - accountNumber
+      properties:
+        gender:
+          type: string
+          description: Gender of client (MALE, FEMALE, NON_BINARY)
+          example: "MALE"
+        maritalStatus:
+          type: string
+          description: Marital status of client (MARRIED, SINGLE, DIVORCED, WIDOW_WIDOWER)
+          example: "SINGLE"
+        dependentAmount:
+          type: integer
+          description: Number of client's dependents
+          example: 0
+        passportIssueDate:
+          type: string
+          format: date
+          description: Date of issue of the client's passport
+          example: "2021-01-01"
+        passportIssueBranch:
+          type: string
+          description: Client's passport issuing department
+          example: "Passport issuance department of the federal service for the saratov region"
+        employment:
+          $ref: '#/components/schemas/EmploymentDto'
+        accountNumber:
+          type: string
+          description: Client's account number
+          example: "4654335"
+
+    EmploymentDto:
+      type: object
+      description: Detailed information about employment
+      required:
+        - employmentStatus
+        - employerINN
+        - salary
+        - position
+        - workExperienceTotal
+        - workExperienceCurrent
+      properties:
+        employmentStatus:
+          type: string
+          description: Employment status of client (UNEMPLOYED, SELF_EMPLOYED, EMPLOYED, BUSINESS_OWNER)
+          example: "EMPLOYED"
+        employerINN:
+          type: string
+          description: Taxpayer identification number of client's employer
+          example: "520205004556"
+        salary:
+          type: number
+          format: bigdecimal
+          description: Size of client's salary
+          example: 40000
+        position:
+          type: string
+          description: Position at work (WORKER, MID_MANAGER, TOP_MANAGER, OWNER)
+          example: "WORKER"
+        workExperienceTotal:
+          type: integer
+          description: Total work experience, number of months
+          example: 36
+        workExperienceCurrent:
+          type: integer
+          description: Current work experience, number of months
+          example: 24
+
+    CreditDto:
+      type: object
+      description: Information about credit
+      required:
+        - amount
+        - term
+        - monthlyPayment
+        - rate
+        - psk
+        - isInsuranceEnabled
+        - isSalaryClient
+        - paymentSchedule
+      properties:
+        amount:
+          type: number
+          format: bigdecimal
+          description: Requested loan amount
+          example: "200000"
+        term:
+          type: integer
+          description: Loan term, number of months
+          example: 24
+        monthlyPayment:
+          type: number
+          format: bigdecimal
+          description: The amount of payment for every month
+          example: "10000"
+        rate:
+          type: number
+          format: bigdecimal
+          description: Loan rate calculated depending on parameters, percentages
+          example: "22"
+        psk:
+          type: number
+          format: bigdecimal
+          description: Total cost of credit
+          example: "250000"
+        isInsuranceEnabled:
+          type: boolean
+          description: Information about whether insurance is included
+          example: true
+        isSalaryClient:
+          type: boolean
+          description: Information about whether the client is a salary client
+          example: false
+        paymentSchedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentScheduleElementDto'
+          example:
+            - number: 1
+              date: "2025-01-01"
+              totalPayment: "10500"
+              interestPayment: "500"
+              debtPayment: "10000"
+              remainingDebt: "190000"
+            - number: 2
+              date: "2025-02-01"
+              totalPayment: "10400"
+              interestPayment: "490"
+              debtPayment: "10000"
+              remainingDebt: "180000"
+
+    PaymentScheduleElementDto:
+      type: object
+      description: Info about one loan payment
+      required:
+        - number
+        - date
+        - totalPayment
+        - interestPayment
+        - debtPayment
+        - remainingDebt
+      properties:
+        number:
+          type: integer
+          description: Payment number
+          example: 4
+        date:
+          type: string
+          format: date
+          description: Date of payment
+          example: "2025-04-18"
+        totalPayment:
+          type: number
+          format: bigdecimal
+          description: Total payment amount
+          example: "10500"
+        interestPayment:
+          type: number
+          format: bigdecimal
+          description: Interest part of the payment
+          example: "500"
+        debtPayment:
+          type: number
+          format: bigdecimal
+          description: Main part of the payment
+          example: "10000"
+        remainingDebt:
+          type: number
+          format: bigdecimal
+          description: Remaining debt after payment
+          example: "160000"
+
+    StatementDto:
+      type: object
+      description: Information about statement
+      required:
+        - statementId
+        - clientId
+        - creditId
+        - status
+        - creationDate
+        - appliedOffer
+        - signDate
+        - sesCode
+        - statusHistory
+      properties:
+        statementId:
+          type: string
+          description: Id of statement
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        clientId:
+          type: string
+          description: Id of client
+          example: "4fa85f64-5717-4562-b3fc-2c963f66afa4"
+        creditId:
+          type: string
+          description: Id of credit
+          example: "5fa85f64-5717-4562-b3fc-2c963f66afa2"
+        status:
+          type: string
+          description: Status of statement (PREAPPROVAL, APPROVED, CC_DENIED, CC_APPROVED, PREPARE_DOCUMENTS,DOCUMENT_CREATED, CLIENT_DENIED, DOCUMENT_SIGNED, CREDIT_ISSUED)
+          example: "APPROVED"
+        creationDate:
+          type: string
+          format: date-time
+          description: Statement creation time
+          example: "2025-07-07 18:53:42.951815"
+        appliedOffer:
+          $ref: '#/components/schemas/LoanOfferDto'
+        signDate:
+          type: string
+          format: date-time
+          description: Document signing time
+          example: "2025-07-08 18:53:42.951815"
+        sesCode:
+          type: string
+          description: Code for signing document
+          example: "4J5CK3"
+        statusHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementStatusHistoryDto'
+          example:
+            - number: 1
+              status: "APPROVED"
+              time: "2025-07-07 18:53:42.951815"
+              changeType: "AUTOMATIC"
+            - number: 2
+              status: "CC_DENIED"
+              time: "2025-07-07 18:54:42.951815"
+              changeType: "AUTOMATIC"
+
+    StatementStatusHistoryDto:
+      type: object
+      description: Information about changing the statement
+      required:
+        - status
+        - time
+        - changeType
+      properties:
+        status:
+          type: string
+          description: Status of statement (PREAPPROVAL, APPROVED, CC_DENIED, CC_APPROVED, PREPARE_DOCUMENTS,DOCUMENT_CREATED, CLIENT_DENIED, DOCUMENT_SIGNED, CREDIT_ISSUED)
+          example: "APPROVED"
+        time:
+          type: string
+          format: date-time
+          description: Statement change time
+          example: "2025-07-07T18:53:42.951"
+        changeType:
+          type: string
+          description: Change type of statement (AUTOMATIC, MANUAL)
+          example: "AUTOMATIC"
