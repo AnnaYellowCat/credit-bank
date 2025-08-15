@@ -8,6 +8,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/credit_bank_deal_service
     username: postgres
     password: postgres
+
   jpa:
     hibernate:
       ddl-auto: validate

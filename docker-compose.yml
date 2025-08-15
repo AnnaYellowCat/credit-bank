@@ -1,4 +1,6 @@
-version: '3.9'
+networks:
+  microservices-network:
+    driver: bridge
 
 services:
   zookeeper:
@@ -8,6 +10,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 2181:2181
+    networks:
+      - microservices-network
 
   kafka:
     image: confluentinc/cp-kafka:7.2.15
@@ -22,6 +26,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - microservices-network
 
   kafka-topics-setup:
     image: confluentinc/cp-kafka:7.2.15
@@ -41,3 +47,138 @@ services:
       kafka-topics --bootstrap-server kafka:29092 --create --topic credit-issued --partitions 1 --replication-factor 1
       kafka-topics --bootstrap-server kafka:29092 --create --topic statement-denied --partitions 1 --replication-factor 1
       "
+    networks:
+      - microservices-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: kafka-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - microservices-network
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: credit_bank_deal_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_EMAIL}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_PASSWORD}"
+    depends_on:
+      - postgres
+    networks:
+      - microservices-network
+
+  calculator-service:
+    build:
+      context: ./calculator-service
+    ports:
+      - "8080:8080"
+    networks:
+      - microservices-network
+
+  deal-service:
+    build:
+      context: ./deal-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/credit_bank_deal_service
+      SPRING_DATASOURCE_USERNAME: "${POSTGRES_USER}"
+      SPRING_DATASOURCE_PASSWORD: "${POSTGRES_PASSWORD}"
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: kafka:29092
+      SPRING_KAFKA_PRODUCER_KEY-SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE-SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      APP_GATEWAY_URI: http://calculator-service:8080
+      APP_CALCULATOR_OFFERS: /calculator/offers
+      APP_CALCULATOR_CREDIT: /calculator/calc
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - microservices-network
+
+  statement-service:
+    build:
+      context: ./statement-service
+    ports:
+      - "8082:8082"
+    environment:
+      APP_GATEWAY_URI: http://deal-service:8081
+      APP_DEAL_GET: /deal/statement
+      APP_DEAL_SELECT: /deal/offer/select
+    networks:
+      - microservices-network
+
+  dossier-service:
+    build:
+      context: ./dossier-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: kafka:29092
+      SPRING_KAFKA_CONSUMER_GROUP-ID: deal-documents-group
+      SPRING_KAFKA_CONSUMER_KEY-DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_CONSUMER_VALUE-DESERIALIZER: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: '"*"'
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_DESERIALIZER_VALUE_DELEGATE_CLASS: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_VALUE_DEFAULT_TYPE: com.neoflex.dossierservice.dto.EmailMessage
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_USE_TYPE_HEADERS: "false"
+      SPRING_MAIL_HOST: smtp.mail.ru
+      SPRING_MAIL_PORT: 465
+      SPRING_MAIL_USERNAME: "${EMAIL_USERNAME}"
+      SPRING_MAIL_PASSWORD: "${EMAIL_PASSWORD}"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE: "true"
+      APP_GATEWAY_URI: http://deal-service:8081
+      APP_DEAL_CREDIT: /deal/credit/
+      APP_DEAL_DOCUMENT_BASE: /deal/document/
+      APP_DEAL_DOCUMENT_SIGN: /code?code=
+    depends_on:
+      - kafka
+    networks:
+      - microservices-network
+
+  gateway-service:
+    build:
+      context: ./gateway-service
+    ports:
+      - "8084:8084"
+    environment:
+      APP_STATEMENT_GET-OFFERS: http://statement-service:8082/statement
+      APP_STATEMENT_SELECT-OFFER: http://statement-service:8082/statement/offer
+      APP_DEAL_FINISH-REG: http://deal-service:8081/deal/calculate/
+      APP_DEAL_SEND-DOCUMENTS-REQUEST_PART1: http://deal-service:8081/deal/document/
+      APP_DEAL_SEND-DOCUMENTS-REQUEST_PART2: /send
+      APP_DEAL_SIGN-DOCUMENTS-REQUEST_PART1: http://deal-service:8081/deal/document/
+      APP_DEAL_SIGN-DOCUMENTS-REQUEST_PART2: /sign
+      APP_DEAL_SIGN-DOCUMENTS_PART1: http://deal-service:8081/deal/document/
+      APP_DEAL_SIGN-DOCUMENTS_PART2: /code?code=
+      APP_DEAL_GET-STATEMENT: http://deal-service:8081/deal/admin/statement/
+      APP_DEAL_GET-STATEMENTS: http://deal-service:8081/deal/admin/statement
+    networks:
+      - microservices-network
+
+volumes:
+  postgres_data:
